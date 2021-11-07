@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>サークルの一括追加：trivialcc-event-generator</title>
+  </head>
+  <body>
+    <header>
+      <h1>サークルの一括追加</h1>
+    </header>
+    <main>
+      <section>
+        <form method="GET" action="../event/detail.html">
+          <p>
+            <label for="form-circle">サークル一覧</label>
+          </p>
+          <p>
+            <textarea id="form-circle" cols="100" rows="50"></textarea>
+          </p>
+          <p><input type="submit" value="インポート"></p>
+        </form>
+      </section>
+      <section>
+        <h2>機能</h2>
+        <p>CSVフォーマットのサークルリストを取り込む</p>
+        <p>CSVのフォーマットは下記の通り</p>
+        <ul>
+          <li>1行につき1スペース、1サークル</li>
+          <li>「スペース番号」「URL」「サークル名」「ペンネーム」「pixiv URL」「twitter URL」の順にカラムが並ぶ。（<strong>URLはあとにしていいのでは？</strong>）</li>
+          <li>「スペース番号」の並び順に行を並べる</li>
+          <li>各カラムはダブルクォートで囲う</li>
+        </ul>
+        <p>例：</p>
+        <pre>
+"あ22ab","http://www.pixiv.net/member.php?id=3422465","baba精米所","baba","https://www.pixiv.net/users/3422465","https://twitter.com/baba15207048"
+"あ23ab","http://clashhouse.cute.coocan.jp/","くらっしゅハウス","比良坂真琴","https://www.pixiv.net/users/1207963","https://twitter.com/pttp666"
+        </pre>
+      </section>
+    </main>
+    <footer><a href="../">TOP</a></footer>
+  </body>
+</html>

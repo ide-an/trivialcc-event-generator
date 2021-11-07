@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>イベントの追加：trivialcc-event-generator</title>
+  </head>
+  <body>
+    <header>
+      <h1>イベントの追加</h1>
+    </header>
+    <main>
+      <section>
+        <form method="GET" action="detail.html">
+          <p>
+            <label for="form-event-name">イベント名</label>
+            <input type="text" id="form-event-name" placeholder="例大祭" required>
+          </p>
+          <p>
+            <label for="form-event-location">場所</label>
+            <input type="text" id="form-event-location" placeholder="ビッグサイト" required>
+          </p>
+          <p>
+            <label for="form-event-site-url">サイトURL</label>
+            <input type="url" id="form-event-site-url" placeholder="https://reitaisai.com/arts8/">
+          </p>
+          <p>
+            <label for="form-event-start-datetime">開始日時</label>
+            <input type="datetime-local" id="form-event-start-datetime" required>
+            <label for="form-event-end-datetime">終了日時</label>
+            <input type="datetime-local" id="form-event-end-datetime" required>
+          </p>
+          <p><input type="submit" value="作成"></p>
+        </form>
+      </section>
+    </main>
+    <footer><a href="../">TOP</a></footer>
+  </body>
+</html>
