@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.9.0/css/ol.css" type="text/css">
+    <style>
+      h2 {
+        font-size: 2em
+      }
+      html, body {
+        height: 100%;
+      }
+      .map {
+        height: calc(100% - 2em);
+        width: 50%;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.9.0/build/ol.js"></script>
+    <title>OpenLayers example</title>
+  </head>
+  <body>
+    <h2>My Map</h2>
+    <div id="map" class="map"></div>
+    <script type="text/javascript">
+      //var imgUrl = "https://www.dropbox.com/s/fh8mf76y8t0aibi/arts8_mai-1.png?raw=1";
+      var imgUrl = "http://localhost:8000/arts8_mai-1.png";
+      var img = new Image();
+      img.onload = function(){
+        console.log("imageExtent", [0, 0, img.width, img.height]);
+        // see https://openlayers.org/en/latest/examples/static-image.html
+        const projection = new ol.proj.Projection({
+          code: 'static-image',
+          units: 'pixels',
+          extent: [0, 0, img.width, img.height],
+        });
+        // id, x, y, w, h, spacename
+        // 2,615,341,48,48,"か08ab"
+        var feature = new ol.Feature({
+          geometry: new ol.geom.Polygon([[
+            [615,img.height - 341],
+            [615+48,img.height - 341],
+            [615+48,img.height - 341-48],
+            [615,img.height - 341-48],
+          ]])
+        });
+        const style = new ol.style.Style({
+          // trivial-circlecheckの地図の場合、乗算合成で塗っている
+          // ここではアルファチャンネルでお茶を濁す
+          // ゴリッと実装する場合、rendererでいけそうか？
+          // https://openlayers.org/en/latest/examples/style-renderer.html
+          fill: new ol.style.Fill({
+            color: 'rgba(255, 0, 0, 0.6)',
+          }),
+          stroke: new ol.style.Stroke({
+            color: '#ff0000',
+            width: 1,
+          }),
+        });
+        var map = new ol.Map({
+          target: 'map',
+          controls: ol.control.defaults().extend([new ol.control.FullScreen()]),
+          layers: [
+            new ol.layer.Image({
+              source: new ol.source.ImageStatic({
+                url: imgUrl,
+                projection: projection,
+                imageExtent: [0, 0, img.width, img.height]
+              })
+            }),
+            new ol.layer.Vector({
+              source: new ol.source.Vector({
+                features: [ feature ]
+              }),
+              style: style
+            })
+          ],
+          view: new ol.View({
+            projection: projection,
+            center: [img.width/2, img.height/2],
+            extent: [0, 0, img.width, img.height],
+            constrainOnlyCenter: true,
+            zoom: 2,
+            maxZoom: 4,
+            minZoom: 1
+          })
+        });
+      }
+      img.src = imgUrl;
+    </script>
+  </body>
+</html>
