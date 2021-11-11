@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}{% block header %}イベントの追加{% endblock %}{% endblock %}
+
+{% block body %}
+<section>
+  {% if form.errors %}
+  <ul class="errors">
+    {% for error_field in form.errors %}
+    {% for error in form.errors[error_field] %}
+    <li>{{ error_field }}:{{ error }}</li>
+    {% endfor %}
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <form method="POST" action="{{ url_for('controllers.event_new') }}">
+    {{ form.csrf_token }}
+    <p>
+      {{ form.name.label }}
+      {{ form.name(placeholder='例大祭') }}
+    </p>
+    <p>
+      {{ form.location.label }}
+      {{ form.location(placeholder='ビッグサイト') }}
+    </p>
+    <p>
+      {{ form.site_url.label }}
+      {{ form.site_url(placeholder='https://reitaisai.com/arts8/') }}
+    </p>
+    <p>
+      {{ form.start_datetime.label }}
+      {{ form.start_datetime }}
+    </p>
+    <p>
+      {{ form.end_datetime.label }}
+      {{ form.end_datetime }}
+    </p>
+    <p><input type="submit" value="作成"></p>
+  </form>
+</section>
+{% endblock %}

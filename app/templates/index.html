@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}{% block header %}trivial-circlecheck イベントデータ作成ツール{% endblock %}{% endblock %}
+
+{% block body %}
+<section>
+  <ul>
+    <li><a href="{{ url_for('controllers.event_new') }}">イベント新規作成</a></li>
+  </ul>
+</section>
+<section>
+  <h2>イベント一覧</h2>
+  <ul>
+    {% for event in events %}
+    <li><a href="{{ url_for('controllers.event_detail', event_id=event.id) }}">{{ event.name }}</a></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}
