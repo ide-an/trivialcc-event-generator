@@ -8,7 +8,7 @@ from wtforms import (
 from wtforms.validators import (
     DataRequired, URL, Optional
 )
-from .models import (
+from app.models import (
     Event
 )
 
