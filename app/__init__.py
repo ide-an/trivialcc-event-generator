@@ -31,9 +31,10 @@ def create_app(test_config=None):
 
     import app.controllers as controllers
     app.register_blueprint(controllers.bp)
-    from app.db import db_session
+    from app.db import db_session, init_db_command
     @app.teardown_appcontext
     def shutdown_session(exception=None):
         db_session.remove()
+    app.cli.add_command(init_db_command)
 
     return app
