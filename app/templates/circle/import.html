@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}{% block header %}サークルの一括追加{% endblock %}{% endblock %}
+
+{% block body %}
+  <section>
+    {% if form.errors %}
+      <ul class="errors">
+        {% for error_field in form.errors %}
+          {% for error in form.errors[error_field] %}
+            <li>{{ error_field }}:{{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+      </ul>
+    {% endif %}
+    <form method="POST" action="{{ url_for('controllers.circle_import', event_id=event.id) }}">
+      {{ form.csrf_token }}
+      <p>
+        {{ form.import_data.label }}
+      </p>
+      <p>
+        {{ form.import_data(cols='100', rows='20') }}
+      </p>
+      <p><input type="submit" value="インポート"></p>
+    </form>
+  </section>
+  <section>
+    <h2>機能</h2>
+    <p>CSVフォーマットのサークルリストを取り込む</p>
+    <p>CSVのフォーマットは下記の通り</p>
+    <ul>
+      <li>1行につき1スペース、1サークル</li>
+      <li>「スペース番号」「URL」「サークル名」「ペンネーム」「pixiv URL」「twitter URL」の順にカラムが並ぶ。（<strong>URLはあとにしていいのでは？</strong>）</li>
+      <li>「スペース番号」の並び順に行を並べる</li>
+      <li>各カラムはダブルクォートで囲う</li>
+    </ul>
+    <p>例：</p>
+    <pre>
+"あ22ab","http://www.pixiv.net/member.php?id=3422465","baba精米所","baba","https://www.pixiv.net/users/3422465","https://twitter.com/baba15207048"
+"あ23ab","http://clashhouse.cute.coocan.jp/","くらっしゅハウス","比良坂真琴","https://www.pixiv.net/users/1207963","https://twitter.com/pttp666"
+    </pre>
+  </section>
+{% endblock %}

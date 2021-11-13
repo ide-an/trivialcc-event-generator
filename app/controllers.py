@@ -1,11 +1,11 @@
 from datetime import datetime
 from dateutil.tz import gettz
 from flask import (
-    Blueprint, render_template, request, redirect, current_app, url_for, abort
+    Blueprint, render_template, request, redirect, current_app, url_for, abort, flash
 )
 from flask_wtf import FlaskForm
 from wtforms import (
-    StringField, URLField, DateTimeLocalField
+    StringField, URLField, DateTimeLocalField, HiddenField, TextAreaField
 )
 from wtforms.validators import (
     DataRequired, URL, Optional
@@ -14,11 +14,17 @@ from app.models import (
     Event
 )
 from app.db import db_session
+from app.services import (
+    CircleImportService
+)
 
 bp = Blueprint('controllers', __name__)
 
 # TODO: configに置く
 TIMEZONE=gettz('Asia/Tokyo')
+
+FLASH_OK = 'ok'
+FLASH_NG = 'ng'
 
 @bp.route('/')
 def index():
@@ -53,10 +59,26 @@ def event_detail(event_id):
     イベントの詳細
     イベントの編集やイベントに紐付いた各要素の編集につなぐ
     """
-    event = Event.query.where(Event.id == event_id).first()
+    event = Event.query.get(event_id)
     if event is None:
         abort(404)
     return render_template('event/detail.html', event=event)
+
+@bp.route('/event/<int:event_id>/circle/import', methods=('GET', 'POST'))
+def circle_import(event_id):
+    event = Event.query.get(event_id)
+    if event is None:
+        abort(404)
+    form = CircleImportForm()
+    if form.validate_on_submit():
+        importer = CircleImportService()
+        if importer.do_import(form.import_data, event):
+            flash('インポートに成功しました', FLASH_OK)
+            return redirect(url_for('controllers.event_detail', event_id=event.id))
+        else: # import失敗の旨を通知する
+            flash('インポートが失敗しました', FLASH_NG)
+            pass
+    return render_template('circle/import.html', form=form, event=event)
 
 class EventForm(FlaskForm):
     name = StringField('イベント名', validators=[DataRequired()])
@@ -64,3 +86,7 @@ class EventForm(FlaskForm):
     site_url = URLField('サイトURL', validators=[Optional(), URL()])
     start_datetime = DateTimeLocalField('開始日時', format='%Y-%m-%dT%H:%M', validators=[DataRequired()])
     end_datetime = DateTimeLocalField('終了日時', format='%Y-%m-%dT%H:%M', validators=[DataRequired()])
+
+class CircleImportForm(FlaskForm):
+    #event_id = HiddenField(validators=[DataRequired()])
+    import_data = TextAreaField('インポートデータ', validators=[DataRequired()])

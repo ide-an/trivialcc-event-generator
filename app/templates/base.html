@@ -4,12 +4,31 @@
     <meta charset="utf-8">
     <title>{% block title %}{% endblock %} - trivialcc-event-generator</title>
     {% block head %}{% endblock %}
+    <style type="text/css">
+      .flashes li.ok {
+        color: #090;
+      }
+      .flashes li.ng {
+        color: #900;
+      }
+    </style>
   </head>
   <body>
     <header>
       <h1>{% block header %}{% endblock %}</h1>
     </header>
     <main>
+      {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+      <section>
+        <ul class="flashes">
+          {% for category, message in messages %}
+          <li class="{{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+      {% endwith %}
       {% block body %}{% endblock %}
     </main>
 
