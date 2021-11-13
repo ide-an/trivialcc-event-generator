@@ -10,10 +10,5 @@ class Event(Base):
     start_datetime = Column(DateTime)
     end_datetime = Column(DateTime)
 
-    def __init__(self, **kwargs):
-        self.id  = kwargs.get('id')
-        self.name = kwargs.get('name')
-        self.location  = kwargs.get('location')
-        self.site_url = kwargs.get('site_url')
-        self.start_datetime = kwargs.get('start_datetime')
-        self.end_datetime = kwargs.get('end_datetime')
+    def __repr__(self):
+        return f"Event(id  = {self.id!r}, name = {self.name!r}, location = {self.location!r}, site_url = {self.site_url!r}, start_datetime = {self.start_datetime!r}, end_datetime = {self.end_datetime!r})"

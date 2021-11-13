@@ -1,3 +1,5 @@
+import datetime
+from dateutil.tz import gettz
 from flask import (
     Blueprint, render_template, request, redirect, current_app, url_for
 )
@@ -11,19 +13,18 @@ from wtforms.validators import (
 from app.models import (
     Event
 )
-
+from app.db import db_session
 
 bp = Blueprint('controllers', __name__)
+
+TIMEZONE=gettz('Asia/Tokyo')
 
 @bp.route('/')
 def index():
     """
     イベントの新規作成への誘導と、作成済みのイベント一覧を返す
     """
-    events = [
-        Event(id=1, name='秋季例大祭'),
-        Event(id=2, name='紅楼夢'),
-    ]
+    events = Event.query.order_by(Event.id.asc())
     return render_template('index.html', events=events)
 
 @bp.route('/event/new', methods=('GET', 'POST'))
@@ -31,10 +32,19 @@ def event_new():
     """ イベントの新規作成フォーム """
     form = EventForm()
     if form.validate_on_submit():
-        # TODO: implement
-        # new Event object
-        return redirect(url_for('controllers.event_detail', event_id=1))
-    return render_template('event/new.html', form=form)
+        event = Event(
+                name = form.name.data,
+                location = form.location.data,
+                site_url = form.site_url.data,
+                start_datetime = form.start_datetime.data.replace(tzinfo=TIMEZONE),
+                end_datetime = form.end_datetime.data.replace(tzinfo=TIMEZONE),
+                )
+        with db_session.begin():
+            db_session.add(event)
+            db_session.commit()
+        current_app.logger.info(event)
+        return redirect(url_for('controllers.event_detail', event_id=event.id))
+    return render_template('event/new.html', form=form, timezone=TIMEZONE)
 
 @bp.route('/event/detail/<int:event_id>')
 def event_detail(event_id):
