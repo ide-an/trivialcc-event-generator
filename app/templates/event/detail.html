@@ -29,7 +29,7 @@
     <h2>イベント詳細データの作成</h2>
     <p><a href="{{ url_for('controllers.circle_import', event_id=event.id) }}">サークルの一括追加</a></p>
     <p><a href="{{ url_for('controllers.circle_list', event_id=event.id) }}">サークル一覧</a></p>
-    <p><a href="../map/new.html">マップの追加</a></p>
+    <p><a href="{{ url_for('controllers.map_new', event_id=event.id) }}">マップの追加</a></p>
     <section>
       <h3>マップ一覧</h3>
       <ul>

@@ -11,12 +11,13 @@ from wtforms.validators import (
     DataRequired, URL, Optional
 )
 from app.models import (
-    Event, Circle
+    Event, Circle, Map, MapRegion
 )
 from app.db import db_session
 from app.services import (
     CircleImportService
 )
+from app.extract_region_service import ExtractRegionService
 
 bp = Blueprint('controllers', __name__)
 
@@ -79,7 +80,7 @@ def circle_import(event_id):
         try:
             importer.do_import(form.import_data.data, event)
             flash('インポートに成功しました', FLASH_OK)
-            return redirect(url_for('controllers.event_detail', event_id=event.id))
+            return redirect(url_for('controllers.circle_list', event_id=event.id))
         except Exception as e: # import失敗の旨を通知する
             flash('インポートが失敗しました:{}'.format(e), FLASH_NG)
             pass
@@ -93,6 +94,41 @@ def circle_list(event_id):
     circles_spaces = Circle.find_by_event(event)
     return render_template('circle/list.html', circles_spaces = circles_spaces, event=event)
 
+@bp.route('/event/<int:event_id>/map/new', methods=('GET', 'POST'))
+def map_new(event_id):
+    event = Event.query.get(event_id)
+    if event is None:
+        abort(404)
+    form = MapForm()
+    if form.validate_on_submit():
+        # 画像からMapRegion抽出
+        try:
+            region_extractor = ExtractRegionService()
+            regions = region_extractor.extract(form.image_url.data)
+            try:
+                new_map = Map(name = form.name.data, image_url = form.image_url.data)
+                db_session.add(new_map)
+                db_session.flush() # mapのid取得のため
+                for region in regions:
+                    map_region = MapRegion(
+                            x = region.x,
+                            y = region.y,
+                            w = region.w,
+                            h = region.h,
+                            map_id = new_map.id,
+                            )
+                    db_session.add(map_region)
+                db_session.commit()
+                flash('マップ追加が成功しました', FLASH_OK)
+                # TODO: 本当はmap_detailに飛ばしたい
+                return redirect(url_for('controllers.event_detail', event_id=event.id))
+            except Exception as e:
+                db_session.rollback()
+                flash('マップ追加が失敗しました:{}'.format(e), FLASH_NG)
+        except Exception as e:
+            flash('マップ追加が失敗しました:{}'.format(e), FLASH_NG)
+    return render_template('map/new.html', form=form, event=event)
+
 class EventForm(FlaskForm):
     name = StringField('イベント名', validators=[DataRequired()])
     location = StringField('場所', validators=[DataRequired()])
@@ -101,5 +137,9 @@ class EventForm(FlaskForm):
     end_datetime = DateTimeLocalField('終了日時', format='%Y-%m-%dT%H:%M', validators=[DataRequired()])
 
 class CircleImportForm(FlaskForm):
-    #event_id = HiddenField(validators=[DataRequired()])
     import_data = TextAreaField('インポートデータ', validators=[DataRequired()])
+
+class MapForm(FlaskForm):
+    name = StringField('マップ名', validators=[DataRequired()])
+    image_url = URLField('画像URL', validators=[DataRequired(), URL()])
+

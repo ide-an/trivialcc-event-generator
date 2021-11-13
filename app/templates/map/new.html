@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}{% block header %}マップの追加{% endblock %}{% endblock %}
+
+{% block body %}
+<section>
+  {% if form.errors %}
+  <ul class="errors">
+    {% for error_field in form.errors %}
+    {% for error in form.errors[error_field] %}
+    <li>{{ error_field }}:{{ error }}</li>
+    {% endfor %}
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <form method="POST" action="{{ url_for('controllers.map_new', event_id=event.id) }}">
+    {{ form.csrf_token }}
+    <p>
+      {{ form.name.label }}
+      {{ form.name(placeholder='Aホール') }}
+    </p>
+    <p>
+      {{ form.image_url.label }}
+      {{ form.image_url(placeholder='https://example.com/sample.png') }}
+    </p>
+    <p><input type="submit" value="作成"></p>
+  </form>
+</section>
+{% endblock %}
