@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}{% block header %}イベント詳細{% endblock %}{% endblock %}
+
+{% block body %}
+  <section>
+    <p>
+      <span>イベント名:</span>
+      <span>{{ event.name }}</span>
+    </p>
+    <p>
+      <span>場所:</span>
+      <span>{{ event.location }}</span>
+    </p>
+    <p>
+      <span>サイトURL:</span>
+      <span><a href="{{ event.site_url }}">{{ event.site_url }}</a></span>
+    </p>
+    <p>
+      <span>開始日時:</span>
+      <span>{{ event.start_datetime }}</span>
+    </p>
+    <p>
+      <span>終了日時:</span>
+      <span>{{ event.end_datetime }}</span>
+    </p>
+  </section>
+  <section>
+    <h2>イベント詳細データの作成</h2>
+    <p><a href="../circle/import.html">サークルの一括追加</a></p>
+    <p><a href="../map/new.html">マップの追加</a></p>
+    <section>
+      <h3>マップ一覧</h3>
+      <ul>
+        <li><a href="../map/detail.html">東1ホール</a></li>
+        <li><a href="../map/detail.html">東2ホール</a></li>
+      </ul>
+    </section>
+    <p><a href="#">イベントのエクスポート</a><strong>クリックするとyamlが降ってくる。ボタンのほうがいいかも</strong></p>
+  </section>
+{% endblock %}

@@ -1,7 +1,7 @@
 from datetime import datetime
 from dateutil.tz import gettz
 from flask import (
-    Blueprint, render_template, request, redirect, current_app, url_for
+    Blueprint, render_template, request, redirect, current_app, url_for, abort
 )
 from flask_wtf import FlaskForm
 from wtforms import (
@@ -52,7 +52,10 @@ def event_detail(event_id):
     イベントの詳細
     イベントの編集やイベントに紐付いた各要素の編集につなぐ
     """
-    return '<p>event detail for {}</p>'.format(event_id)
+    event = Event.query.where(Event.id == event_id).first()
+    if event is None:
+        abort(404)
+    return render_template('event/detail.html', event=event)
 
 class EventForm(FlaskForm):
     name = StringField('イベント名', validators=[DataRequired()])
