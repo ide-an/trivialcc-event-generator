@@ -16,15 +16,17 @@ class CircleImportService:
         return list(map(CircleImportRow._make, csv.reader(io.StringIO(import_data))))
 
     def validate_row(self, row):
+        def not_valid_url(v):
+            return v is not None and v != ''  and not validators.url(v)
         # とりあえずURLのフォーマットだけ見ておく
-        if row.site_url is not None and not validators.url(row.site_url):
-            current_app.logger.info("if row.site_url is not None and validators.url(row.site_url):")
+        if not_valid_url(row.site_url):
+            current_app.logger.info("if not_valid_url(row.site_url):")
             return False
-        if row.pixiv is not None and not validators.url(row.pixiv):
-            current_app.logger.info("if row.pixiv is not None and validators.url(row.pixiv):")
+        if not_valid_url(row.pixiv):
+            current_app.logger.info("if not_valid_url(row.pixiv):")
             return False
-        if row.twitter is not None and not validators.url(row.twitter):
-            current_app.logger.info("if row.twitter is not None and validators.url(row.twitter):")
+        if not_valid_url(row.twitter):
+            current_app.logger.info("if not_valid_url(row.twitter):")
             return False
         return True
 
