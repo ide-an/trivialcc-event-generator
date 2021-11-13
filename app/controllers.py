@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from dateutil.tz import gettz
 from flask import (
     Blueprint, render_template, request, redirect, current_app, url_for
@@ -44,7 +44,7 @@ def event_new():
             db_session.commit()
         current_app.logger.info(event)
         return redirect(url_for('controllers.event_detail', event_id=event.id))
-    return render_template('event/new.html', form=form, timezone=TIMEZONE)
+    return render_template('event/new.html', form=form, timezone=TIMEZONE.tzname(datetime.now()))
 
 @bp.route('/event/detail/<int:event_id>')
 def event_detail(event_id):

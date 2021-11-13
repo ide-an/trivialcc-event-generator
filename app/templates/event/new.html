@@ -30,10 +30,12 @@
     <p>
       {{ form.start_datetime.label }}
       {{ form.start_datetime }}
+      <span>timezone: {{ timezone }}</span>
     </p>
     <p>
       {{ form.end_datetime.label }}
       {{ form.end_datetime }}
+      <span>timezone: {{ timezone }}</span>
     </p>
     <p><input type="submit" value="作成"></p>
   </form>
