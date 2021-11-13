@@ -11,7 +11,7 @@ from wtforms.validators import (
     DataRequired, URL, Optional
 )
 from app.models import (
-    Event
+    Event, Circle
 )
 from app.db import db_session
 from app.services import (
@@ -46,9 +46,11 @@ def event_new():
                 start_datetime = form.start_datetime.data.replace(tzinfo=TIMEZONE),
                 end_datetime = form.end_datetime.data.replace(tzinfo=TIMEZONE),
                 )
-        with db_session.begin():
+        try:
             db_session.add(event)
             db_session.commit()
+        except:
+            db_session.rollback()
         current_app.logger.info(event)
         return redirect(url_for('controllers.event_detail', event_id=event.id))
     return render_template('event/new.html', form=form, timezone=TIMEZONE.tzname(datetime.now()))
@@ -62,6 +64,8 @@ def event_detail(event_id):
     event = Event.query.get(event_id)
     if event is None:
         abort(404)
+    circles = Circle.query.where(Circle.event_id==event_id).order_by(Circle.space_id).all()
+    current_app.logger.info("circles:{}".format(circles))
     return render_template('event/detail.html', event=event)
 
 @bp.route('/event/<int:event_id>/circle/import', methods=('GET', 'POST'))
@@ -72,13 +76,22 @@ def circle_import(event_id):
     form = CircleImportForm()
     if form.validate_on_submit():
         importer = CircleImportService()
-        if importer.do_import(form.import_data, event):
+        try:
+            importer.do_import(form.import_data.data, event)
             flash('インポートに成功しました', FLASH_OK)
             return redirect(url_for('controllers.event_detail', event_id=event.id))
-        else: # import失敗の旨を通知する
-            flash('インポートが失敗しました', FLASH_NG)
+        except Exception as e: # import失敗の旨を通知する
+            flash('インポートが失敗しました:{}'.format(e), FLASH_NG)
             pass
     return render_template('circle/import.html', form=form, event=event)
+
+@bp.route('/event/<int:event_id>/circle/list')
+def circle_list(event_id):
+    event = Event.query.get(event_id)
+    if event is None:
+        abort(404)
+    circles_spaces = Circle.find_by_event(event)
+    return render_template('circle/list.html', circles_spaces = circles_spaces, event=event)
 
 class EventForm(FlaskForm):
     name = StringField('イベント名', validators=[DataRequired()])

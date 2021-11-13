@@ -1,7 +1,7 @@
 from sqlalchemy import (
-        Column, Integer, String, DateTime, ForeignKey, Float
+        Column, Integer, String, DateTime, ForeignKey, Float, select
         )
-from app.db import Base
+from app.db import Base, db_session
 
 class Event(Base):
     __tablename__ = 'events'
@@ -37,6 +37,14 @@ class Circle(Base):
             f"pixiv = {self.pixiv!r}",
             f"twitter = {self.twitter!r}",
             ]))+")"
+
+    @classmethod
+    def find_by_event(cls, event):
+        return db_session.execute(
+                select(Circle, Space)
+                .where(Circle.space_id == Space.id)
+                .where(Circle.event_id == event.id)
+                .order_by(Space.id)).all()
 
 class Space(Base):
     __tablename__ = 'spaces'

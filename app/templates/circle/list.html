@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}{% block header %}サークル一覧{% endblock %}{% endblock %}
+
+{% block body %}
+  <section>
+    <table>
+      <tr>
+        <th>スペース</th>
+        <th>サークル名</th>
+        <th>ペンネーム</th>
+        <th>サイトURL</th>
+        <th>pixiv</th>
+        <th>twitter</th>
+      </tr>
+      {% for circle, space in circles_spaces %}
+        <tr>
+          <td>{{ space.name }}</td>
+          <td>{{ circle.name }}</td>
+          <td>{{ circle.penname }}</td>
+          <td>{{ circle.site_url }}</td>
+          <td>{{ circle.pixiv }}</td>
+          <td>{{ circle.twitter }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  </section>
+{% endblock %}

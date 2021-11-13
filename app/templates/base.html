@@ -31,7 +31,14 @@
       {% endwith %}
       {% block body %}{% endblock %}
     </main>
-
-    <footer><a href="{{ url_for('controllers.index') }}">TOP</a></footer>
+    <hr />
+    <footer>
+      <ul>
+        {% if event %}
+        <li><a href="{{ url_for('controllers.event_detail', event_id=event.id) }}">{{ event.name }}</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('controllers.index') }}">TOP</a></li>
+      </ul>
+    </footer>
   </body>
 </html>
