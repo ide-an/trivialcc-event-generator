@@ -2,12 +2,19 @@
 
 {% block title %}{% block header %}マップ詳細{% endblock %}{% endblock %}
 {% block head %}
+  <script src="{{ url_for('static', filename='openlayers-v6.9.0/ol.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='openlayers-v6.9.0/ol.css') }}">
   <style type="text/css">
 div.region {
   position: absolute;
   border: 1px solid #333;
   color: rgba(255,0,0,0.5);
   background-color: rgba(255,0,0,0.5);
+}
+#map {
+  height: 600px;
+  width: min(100%, 800px);
+  border: 1px #333 solid;
 }
   </style>
 {% endblock %}
@@ -22,7 +29,72 @@ div.region {
       <span>画像URL:</span>
       <span><a href="{{ map.image_url }}">{{ map.image_url }}</a></span>
     </p>
-    <p><strong>TODO: 画像に矩形データをオーバーラップで表示</strong></p>
+    <div id="map"></div>
+    <script type="text/javascript">
+var imgUrl = "{{ map.image_url }}";
+var img = new Image();
+img.onload = function() {
+  const projection = new ol.proj.Projection({
+    code: 'static-image',
+    units: 'pixels',
+    extent: [0, 0, img.width, img.height],
+  });
+  const style = new ol.style.Style({
+    fill: new ol.style.Fill({
+      color: 'rgba(255, 0, 0, 0.2)',
+    }),
+    stroke: new ol.style.Stroke({
+      color: '#333',
+      width: 1,
+    }),
+  });
+  // TODO: map_regionsから生成する
+  var features = [];
+  {% for region in map_regions %}
+    features.push(
+      new ol.Feature({
+        geometry: new ol.geom.Polygon([[
+          [{{ region.x }},img.height - {{ region.y }}],
+          [{{ region.x + region.w }},img.height - {{ region.y }}],
+          [{{ region.x + region.w }},img.height - {{ region.y + region.h }}],
+          [{{ region.x }},img.height - {{ region.y + region.h }}],
+        ]])
+      })
+    );
+{% endfor %}
+  var map = new ol.Map({
+    target: 'map',
+    controls: ol.control.defaults().extend([new ol.control.FullScreen()]),
+    layers: [
+      new ol.layer.Image({
+        source: new ol.source.ImageStatic({
+          url: imgUrl,
+          projection: projection,
+          imageExtent: [0, 0, img.width, img.height]
+        })
+      }),
+      new ol.layer.Vector({
+        updateWhileAnimating: true,
+        updateWhileInteracting: true,
+        source: new ol.source.Vector({
+          features: features
+        }),
+        style: style
+      })
+    ],
+    view: new ol.View({
+      projection: projection,
+      center: [img.width/2, img.height/2],
+      extent: [0, 0, img.width, img.height],
+      constrainOnlyCenter: true,
+      zoom: 2,
+      maxZoom: 4,
+      minZoom: 1
+    })
+  });
+};
+img.src = imgUrl;
+    </script>
     {#
     <!-- space抽出のサンプルとして試しにdivで配置する -->
     {% for region in map_regions %}
