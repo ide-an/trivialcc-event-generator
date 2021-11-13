@@ -33,8 +33,9 @@
     <section>
       <h3>マップ一覧</h3>
       <ul>
-        <li><a href="../map/detail.html">東1ホール</a></li>
-        <li><a href="../map/detail.html">東2ホール</a></li>
+        {% for map in maps %}
+        <li><a href="{{ url_for('controllers.map_detail', event_id=event.id, map_id=map.id) }}">{{ map.name }}</a></li>
+        {% endfor %}
       </ul>
     </section>
     <p><a href="#">イベントのエクスポート</a><strong>クリックするとyamlが降ってくる。ボタンのほうがいいかも</strong></p>

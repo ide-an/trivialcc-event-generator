@@ -65,9 +65,8 @@ def event_detail(event_id):
     event = Event.query.get(event_id)
     if event is None:
         abort(404)
-    circles = Circle.query.where(Circle.event_id==event_id).order_by(Circle.space_id).all()
-    current_app.logger.info("circles:{}".format(circles))
-    return render_template('event/detail.html', event=event)
+    maps = Map.query.where(Map.event_id == event_id).order_by(Map.id).all()
+    return render_template('event/detail.html', event=event, maps=maps)
 
 @bp.route('/event/<int:event_id>/circle/import', methods=('GET', 'POST'))
 def circle_import(event_id):
@@ -106,7 +105,11 @@ def map_new(event_id):
             region_extractor = ExtractRegionService()
             regions = region_extractor.extract(form.image_url.data)
             try:
-                new_map = Map(name = form.name.data, image_url = form.image_url.data)
+                new_map = Map(
+                        name = form.name.data,
+                        image_url = form.image_url.data,
+                        event_id = event.id,
+                        )
                 db_session.add(new_map)
                 db_session.flush() # mapのid取得のため
                 for region in regions:
@@ -128,6 +131,18 @@ def map_new(event_id):
         except Exception as e:
             flash('マップ追加が失敗しました:{}'.format(e), FLASH_NG)
     return render_template('map/new.html', form=form, event=event)
+
+@bp.route('/event/<int:event_id>/map/<int:map_id>/detail')
+def map_detail(event_id, map_id):
+    event = Event.query.get(event_id)
+    if event is None:
+        abort(404)
+    map_ = Map.query.get(event_id)
+    if map_ is None:
+        abort(404)
+    map_regions = MapRegion.query.where(MapRegion.map_id == map_.id).order_by(MapRegion.id).all()
+    return render_template('map/detail.html', map=map_, map_regions=map_regions, event=event)
+
 
 class EventForm(FlaskForm):
     name = StringField('イベント名', validators=[DataRequired()])

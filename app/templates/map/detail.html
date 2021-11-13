@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}{% block header %}マップ詳細{% endblock %}{% endblock %}
+{% block head %}
+  <style type="text/css">
+div.region {
+  position: absolute;
+  border: 1px solid #333;
+  color: rgba(255,0,0,0.5);
+  background-color: rgba(255,0,0,0.5);
+}
+  </style>
+{% endblock %}
+
+{% block body %}
+  <section>
+    <p>
+      <span>マップ名:</span>
+      <span>{{ map.name }}</span>
+    </p>
+    <p>
+      <span>画像URL:</span>
+      <span><a href="{{ map.image_url }}">{{ map.image_url }}</a></span>
+    </p>
+    <p><strong>TODO: 画像に矩形データをオーバーラップで表示</strong></p>
+    {#
+    <!-- space抽出のサンプルとして試しにdivで配置する -->
+    {% for region in map_regions %}
+      <div style="top :{{ region.y }}px; left:{{ region.x }}px; width:{{ region.w }}px; height:{{ region.h }}px;" class="region">■</div>
+    {% endfor %}
+    #}
+  </section>
+  <section>
+    <h2>マップデータの作成</h2>
+    <p><a href="edit_rect.html">矩形データの編集</a></p>
+    <p><a href="edit_mapping.html">矩形データからスペースへのマッピング</a></p>
+    <p><a href="show_mapping.html">マッピング結果確認</a></p>
+  </section>
+{% endblock %}
