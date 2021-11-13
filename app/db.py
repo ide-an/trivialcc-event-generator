@@ -5,6 +5,7 @@ from sqlalchemy.orm import (
 import click
 from flask.cli import with_appcontext
 
+# TODO: 具体的なpathはconfigに置く
 engine = create_engine('sqlite:///test.db')
 db_session = scoped_session(
         sessionmaker(

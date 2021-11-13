@@ -17,6 +17,7 @@ from app.db import db_session
 
 bp = Blueprint('controllers', __name__)
 
+# TODO: configに置く
 TIMEZONE=gettz('Asia/Tokyo')
 
 @bp.route('/')
