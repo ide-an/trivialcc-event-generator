@@ -1,70 +1,107 @@
-{% macro map_with_region(map_regions, map_image_url, map_dom_id='map') %}
-  <div id="{{ map_dom_id }}"></div>
-  <script type="text/javascript">
-var imgUrl = "{{ map_image_url }}";
-var img = new Image();
-// 外からいじりたいのでグローバルスコープに置いておく
-var map, features;
-img.onload = function() {
-  const projection = new ol.proj.Projection({
-    code: 'static-image',
-    units: 'pixels',
-    extent: [0, 0, img.width, img.height],
-  });
-  const style = new ol.style.Style({
-    fill: new ol.style.Fill({
-      color: 'rgba(255, 0, 0, 0.2)',
-    }),
-    stroke: new ol.style.Stroke({
-      color: '#333',
-      width: 1,
-    }),
-  });
-  features = [];
-  {% for region in map_regions %}
+{% macro map_with_region(map_regions, map_image_url, map_dom_id='map', selection=False) %}
+<div id="{{ map_dom_id }}"></div>
+<script type="text/javascript">
+// 外に出す関数
+var addFeature, regionToPolygon, addOnSelect, onMapLoad = (x) => x;
+(function(){ 
+  var imgUrl = "{{ map_image_url }}";
+  var img = new Image();
+  // 外に出す関数の定義
+  addFeature = function(feature) {
+    source.addFeature(feature);
+  };
+  regionToPolygon = function(x, y, w, h) {
+    return [
+      [x,img.height - y],
+      [x + w,img.height - y],
+      [x + w,img.height - y - h],
+      [x,img.height - y - h]
+    ];
+  };
+  // 外からいじりたいのでグローバルスコープに置いておく
+  var map, source;
+  img.onload = function() {
+    const projection = new ol.proj.Projection({
+      code: 'static-image',
+      units: 'pixels',
+      extent: [0, 0, img.width, img.height],
+    });
+    const style = new ol.style.Style({
+      fill: new ol.style.Fill({
+        color: 'rgba(255, 0, 0, 0.2)',
+      }),
+      stroke: new ol.style.Stroke({
+        color: '#333',
+        width: 1,
+      }),
+    });
+    const selectStyle = new ol.style.Style({
+      fill: new ol.style.Fill({
+        color: 'rgba(255, 0, 0, 0.7)',
+      }),
+      stroke: new ol.style.Stroke({
+        color: '#000',
+        width: 1,
+      }),
+    });
+    var features = [];
+    {% for region in map_regions %}
     features.push(
       new ol.Feature({
-        geometry: new ol.geom.Polygon([[
-          [{{ region.x }},img.height - {{ region.y }}],
-          [{{ region.x + region.w }},img.height - {{ region.y }}],
-          [{{ region.x + region.w }},img.height - {{ region.y + region.h }}],
-          [{{ region.x }},img.height - {{ region.y + region.h }}],
-        ]])
-        // TODO: regionのデータ色々必要そう
+        geometry: new ol.geom.Polygon([
+          regionToPolygon({{ region.x }},{{ region.y }},{{ region.w }},{{ region.h }})
+        ]),
+        model: {{ region.to_json()|safe}}
       })
     );
-{% endfor %}
-  map = new ol.Map({
-    target: '{{ map_dom_id }}',
-    controls: ol.control.defaults().extend([new ol.control.FullScreen()]),
-    layers: [
-      new ol.layer.Image({
-        source: new ol.source.ImageStatic({
-          url: imgUrl,
-          projection: projection,
-          imageExtent: [0, 0, img.width, img.height]
-        })
-      }),
-      new ol.layer.Vector({
-        updateWhileAnimating: true,
-        updateWhileInteracting: true,
-        source: new ol.source.Vector({
-          features: features
+    {% endfor %}
+    source = new ol.source.Vector({
+      features: features
+    });
+    map = new ol.Map({
+      target: '{{ map_dom_id }}',
+      controls: ol.control.defaults().extend([new ol.control.FullScreen()]),
+      layers: [
+        new ol.layer.Image({
+          source: new ol.source.ImageStatic({
+            url: imgUrl,
+            projection: projection,
+            imageExtent: [0, 0, img.width, img.height]
+          })
         }),
-        style: style
+        new ol.layer.Vector({
+          updateWhileAnimating: true,
+          updateWhileInteracting: true,
+          source: source,
+          style: style
+        })
+      ],
+      view: new ol.View({
+        projection: projection,
+        center: [img.width/2, img.height/2],
+        extent: [0, 0, img.width, img.height],
+        constrainOnlyCenter: true,
+        zoom: 2,
+        maxZoom: 4,
+        minZoom: 1
       })
-    ],
-    view: new ol.View({
-      projection: projection,
-      center: [img.width/2, img.height/2],
-      extent: [0, 0, img.width, img.height],
-      constrainOnlyCenter: true,
-      zoom: 2,
-      maxZoom: 4,
-      minZoom: 1
-    })
-  });
-};
-img.src = imgUrl;
-  </script>
+    });
+    {% if selection %}
+    let select = new ol.interaction.Select({
+      style: selectStyle
+    });
+    map.addInteraction(select);
+    var selectHandlers = []
+    select.on('select', function(e) {
+      selectHandlers.forEach((f) => f(e));
+    });
+    addOnSelect = function(handler) {
+      selectHandlers.push(handler);
+    }
+    {% endif %}
+    onMapLoad(map);
+  };
+  img.src = imgUrl;
+})();
+</script>
 {% endmacro %}

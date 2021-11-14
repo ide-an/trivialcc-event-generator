@@ -3,9 +3,9 @@
 
 {% block title %}{% block header %}矩形データの編集{% endblock %}{% endblock %}
 {% block head %}
-  <script src="{{ url_for('static', filename='openlayers-v6.9.0/ol.js') }}"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='openlayers-v6.9.0/ol.css') }}">
-  <style type="text/css">
+<script src="{{ url_for('static', filename='openlayers-v6.9.0/ol.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='openlayers-v6.9.0/ol.css') }}">
+<style type="text/css">
 div.region {
   position: absolute;
   border: 1px solid #333;
@@ -17,18 +17,101 @@ div.region {
   width: min(100%, 800px);
   border: 1px #333 solid;
 }
-  </style>
+</style>
 {% endblock %}
 
 {% block body %}
-  
-  <section>
-    {{ macros.map_with_region(map_regions, map.image_url) }}
-  </section>
 
+<section>
+  {{ macros.map_with_region(map_regions, map.image_url, selection=True) }}
+</section>
+
+<section>
+  <h2>機能</h2>
   <section>
-    <h2>機能</h2>
-    <p>矩形データの追加</p>
-    <p>既存の矩形データを選択して、位置とサイズを変更</p>
+    <h3>矩形データの追加</h3>
+    <form id="form_add_region">
+      <p>
+        <label>x: <input type="text" name="x" size="4"></label>
+        <label>y: <input type="text" name="y" size="4"></label>
+        <label>w: <input type="text" name="w" size="4"></label>
+        <label>h: <input type="text" name="h" size="4"></label>
+        <input type="button" id="button_add_region" value="追加">
+      </p>
+    </form>
+    <script>
+document.querySelector('#button_add_region').addEventListener('click',function(){ 
+  var data = new FormData(document.forms.form_add_region);
+  var x = +data.get('x');
+  var y = +data.get('y');
+  var w = +data.get('w');
+  var h = +data.get('h');
+  var feature = new ol.Feature({
+    geometry: new ol.geom.Polygon([regionToPolygon(x,y,w,h)])
+  });
+  console.log(feature);
+  addFeature(feature);
+  // TODO: この時点でDB上にも追加する
+});
+    </script>
   </section>
-{% endblock %}
+  <section>
+    <h3>矩形データの編集</h3>
+    <form id="form_edit_region">
+      <p>
+        <input type="hidden" name="id">
+        <label>id: <span id="edit_region_id">-</span></label>
+        <label>x: <input type="text" name="x" size="4"></label>
+        <label>y: <input type="text" name="y" size="4"></label>
+        <label>w: <input type="text" name="w" size="4"></label>
+        <label>h: <input type="text" name="h" size="4"></label>
+        <input type="button" id="button_edit_region" value="更新">
+      </p>
+      <p>既存の矩形データを選択して、位置とサイズを変更</p>
+    </form>
+    <script>
+var selectedFeature = null;
+onMapLoad = function(map) {
+  addOnSelect(function(e) {
+    // see https://openlayers.org/en/latest/examples/select-features.html
+    var form = document.forms.form_edit_region;
+    if (e.selected.length === 0) {
+      // formのクリア
+      form.querySelector('[name=id]').value = '';
+      form.querySelector('[name=x]').value = '';
+      form.querySelector('[name=y]').value = '';
+      form.querySelector('[name=w]').value = '';
+      form.querySelector('[name=h]').value = '';
+      document.querySelector('#edit_region_id').innerHTML = '-';
+      selected = null;
+      return;
+    }
+    var feature = e.selected[0];
+    var model = feature.get('model');
+    // form更新
+    form.querySelector('[name=id]').value = model.id;
+    form.querySelector('[name=x]').value = model.x;
+    form.querySelector('[name=y]').value = model.y;
+    form.querySelector('[name=w]').value = model.w;
+    form.querySelector('[name=h]').value = model.h;
+    document.querySelector('#edit_region_id').innerHTML = model.id;
+    selectedFeature = feature;
+  });
+};
+// TODO: 地図上のスペースを選択したときに変えたい
+document.querySelector('#button_edit_region').addEventListener('click',function(){ 
+  var data = new FormData(document.forms.form_edit_region);
+  var x = +data.get('x');
+  var y = +data.get('y');
+  var w = +data.get('w');
+  var h = +data.get('h');
+  var feature = new ol.Feature({
+    geometry: new ol.geom.Polygon([regionToPolygon(x,y,w,h)])
+  });
+  console.log(feature);
+  // addFeature(feature);
+  // TODO: この時点でDB上にも追加する
+});
+    </script>
+  </section>
+  {% endblock %}

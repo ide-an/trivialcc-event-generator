@@ -2,6 +2,7 @@ from sqlalchemy import (
         Column, Integer, String, DateTime, ForeignKey, Float, select
         )
 from app.db import Base, db_session
+import json
 
 class Event(Base):
     __tablename__ = 'events'
@@ -94,3 +95,14 @@ class MapRegion(Base):
             f"w = {self.w!r}",
             f"h = {self.h!r}",
             ]))+")"
+    def to_json(self):
+        return json.dumps({
+            "id": self.id,
+            "map_id": self.map_id,
+            "space_id": self.space_id,
+            "x": self.x,
+            "y": self.y,
+            "w": self.w,
+            "h": self.h,
+            })
+
