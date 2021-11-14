@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% import 'map/macros.html' as macros %}
+
+{% block title %}{% block header %}矩形データの編集{% endblock %}{% endblock %}
+{% block head %}
+  <script src="{{ url_for('static', filename='openlayers-v6.9.0/ol.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='openlayers-v6.9.0/ol.css') }}">
+  <style type="text/css">
+div.region {
+  position: absolute;
+  border: 1px solid #333;
+  color: rgba(255,0,0,0.5);
+  background-color: rgba(255,0,0,0.5);
+}
+#map {
+  height: 600px;
+  width: min(100%, 800px);
+  border: 1px #333 solid;
+}
+  </style>
+{% endblock %}
+
+{% block body %}
+  
+  <section>
+    {{ macros.map_with_region(map_regions, map.image_url) }}
+  </section>
+
+  <section>
+    <h2>機能</h2>
+    <p>矩形データの追加</p>
+    <p>既存の矩形データを選択して、位置とサイズを変更</p>
+  </section>
+{% endblock %}

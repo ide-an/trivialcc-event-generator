@@ -1,0 +1,70 @@
+{% macro map_with_region(map_regions, map_image_url, map_dom_id='map') %}
+  <div id="{{ map_dom_id }}"></div>
+  <script type="text/javascript">
+var imgUrl = "{{ map_image_url }}";
+var img = new Image();
+// 外からいじりたいのでグローバルスコープに置いておく
+var map, features;
+img.onload = function() {
+  const projection = new ol.proj.Projection({
+    code: 'static-image',
+    units: 'pixels',
+    extent: [0, 0, img.width, img.height],
+  });
+  const style = new ol.style.Style({
+    fill: new ol.style.Fill({
+      color: 'rgba(255, 0, 0, 0.2)',
+    }),
+    stroke: new ol.style.Stroke({
+      color: '#333',
+      width: 1,
+    }),
+  });
+  features = [];
+  {% for region in map_regions %}
+    features.push(
+      new ol.Feature({
+        geometry: new ol.geom.Polygon([[
+          [{{ region.x }},img.height - {{ region.y }}],
+          [{{ region.x + region.w }},img.height - {{ region.y }}],
+          [{{ region.x + region.w }},img.height - {{ region.y + region.h }}],
+          [{{ region.x }},img.height - {{ region.y + region.h }}],
+        ]])
+        // TODO: regionのデータ色々必要そう
+      })
+    );
+{% endfor %}
+  map = new ol.Map({
+    target: '{{ map_dom_id }}',
+    controls: ol.control.defaults().extend([new ol.control.FullScreen()]),
+    layers: [
+      new ol.layer.Image({
+        source: new ol.source.ImageStatic({
+          url: imgUrl,
+          projection: projection,
+          imageExtent: [0, 0, img.width, img.height]
+        })
+      }),
+      new ol.layer.Vector({
+        updateWhileAnimating: true,
+        updateWhileInteracting: true,
+        source: new ol.source.Vector({
+          features: features
+        }),
+        style: style
+      })
+    ],
+    view: new ol.View({
+      projection: projection,
+      center: [img.width/2, img.height/2],
+      extent: [0, 0, img.width, img.height],
+      constrainOnlyCenter: true,
+      zoom: 2,
+      maxZoom: 4,
+      minZoom: 1
+    })
+  });
+};
+img.src = imgUrl;
+  </script>
+{% endmacro %}

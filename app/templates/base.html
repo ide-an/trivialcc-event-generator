@@ -44,8 +44,11 @@
     <hr />
     <footer>
       <ul>
+        {% if map %}
+        <li><a href="{{ url_for('controllers.map_detail', map_id=map.id, event_id=event.id) }}">マップ:{{ map.name }}</a></li>
+        {% endif %}
         {% if event %}
-        <li><a href="{{ url_for('controllers.event_detail', event_id=event.id) }}">{{ event.name }}</a></li>
+        <li><a href="{{ url_for('controllers.event_detail', event_id=event.id) }}">イベント:{{ event.name }}</a></li>
         {% endif %}
         <li><a href="{{ url_for('controllers.index') }}">TOP</a></li>
       </ul>

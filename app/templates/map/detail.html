@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% import 'map/macros.html' as macros %}
 
 {% block title %}{% block header %}マップ詳細{% endblock %}{% endblock %}
 {% block head %}
@@ -29,83 +30,12 @@ div.region {
       <span>画像URL:</span>
       <span><a href="{{ map.image_url }}">{{ map.image_url }}</a></span>
     </p>
-    <div id="map"></div>
-    <script type="text/javascript">
-var imgUrl = "{{ map.image_url }}";
-var img = new Image();
-img.onload = function() {
-  const projection = new ol.proj.Projection({
-    code: 'static-image',
-    units: 'pixels',
-    extent: [0, 0, img.width, img.height],
-  });
-  const style = new ol.style.Style({
-    fill: new ol.style.Fill({
-      color: 'rgba(255, 0, 0, 0.2)',
-    }),
-    stroke: new ol.style.Stroke({
-      color: '#333',
-      width: 1,
-    }),
-  });
-  // TODO: map_regionsから生成する
-  var features = [];
-  {% for region in map_regions %}
-    features.push(
-      new ol.Feature({
-        geometry: new ol.geom.Polygon([[
-          [{{ region.x }},img.height - {{ region.y }}],
-          [{{ region.x + region.w }},img.height - {{ region.y }}],
-          [{{ region.x + region.w }},img.height - {{ region.y + region.h }}],
-          [{{ region.x }},img.height - {{ region.y + region.h }}],
-        ]])
-      })
-    );
-{% endfor %}
-  var map = new ol.Map({
-    target: 'map',
-    controls: ol.control.defaults().extend([new ol.control.FullScreen()]),
-    layers: [
-      new ol.layer.Image({
-        source: new ol.source.ImageStatic({
-          url: imgUrl,
-          projection: projection,
-          imageExtent: [0, 0, img.width, img.height]
-        })
-      }),
-      new ol.layer.Vector({
-        updateWhileAnimating: true,
-        updateWhileInteracting: true,
-        source: new ol.source.Vector({
-          features: features
-        }),
-        style: style
-      })
-    ],
-    view: new ol.View({
-      projection: projection,
-      center: [img.width/2, img.height/2],
-      extent: [0, 0, img.width, img.height],
-      constrainOnlyCenter: true,
-      zoom: 2,
-      maxZoom: 4,
-      minZoom: 1
-    })
-  });
-};
-img.src = imgUrl;
-    </script>
-    {#
-    <!-- space抽出のサンプルとして試しにdivで配置する -->
-    {% for region in map_regions %}
-      <div style="top :{{ region.y }}px; left:{{ region.x }}px; width:{{ region.w }}px; height:{{ region.h }}px;" class="region">■</div>
-    {% endfor %}
-    #}
+    {{ macros.map_with_region(map_regions, map.image_url) }}
   </section>
   <section>
     <h2>マップデータの作成</h2>
-    <p><a href="edit_rect.html">矩形データの編集</a></p>
-    <p><a href="edit_mapping.html">矩形データからスペースへのマッピング</a></p>
+    <p><a href="{{ url_for('controllers.map_edit_region', map_id=map.id, event_id=event.id) }}">矩形データの編集</a></p>
+    <p><a href="{{ url_for('controllers.map_edit_mapping', map_id=map.id, event_id=event.id) }}">矩形データからスペースへのマッピング</a></p>
     <p><a href="show_mapping.html">マッピング結果確認</a></p>
   </section>
 {% endblock %}

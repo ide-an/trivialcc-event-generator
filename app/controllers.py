@@ -143,6 +143,27 @@ def map_detail(event_id, map_id):
     map_regions = MapRegion.query.where(MapRegion.map_id == map_.id).order_by(MapRegion.id).all()
     return render_template('map/detail.html', map=map_, map_regions=map_regions, event=event)
 
+@bp.route('/event/<int:event_id>/map/<int:map_id>/edit_mapping')
+def map_edit_mapping(event_id, map_id):
+    event = Event.query.get(event_id)
+    if event is None:
+        abort(404)
+    map_ = Map.query.get(event_id)
+    if map_ is None:
+        abort(404)
+    map_regions = MapRegion.query.where(MapRegion.map_id == map_.id).order_by(MapRegion.id).all()
+    return render_template('map/edit_mapping.html', map=map_, map_regions=map_regions, event=event)
+
+@bp.route('/event/<int:event_id>/map/<int:map_id>/edit_region')
+def map_edit_region(event_id, map_id):
+    event = Event.query.get(event_id)
+    if event is None:
+        abort(404)
+    map_ = Map.query.get(event_id)
+    if map_ is None:
+        abort(404)
+    map_regions = MapRegion.query.where(MapRegion.map_id == map_.id).order_by(MapRegion.id).all()
+    return render_template('map/edit_region.html', map=map_, map_regions=map_regions, event=event)
 
 class EventForm(FlaskForm):
     name = StringField('イベント名', validators=[DataRequired()])
