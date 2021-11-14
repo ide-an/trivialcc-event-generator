@@ -27,15 +27,20 @@ div.region {
 </section>
 
 <section>
+  <script>
+//var csrf_token = "{{ csrf_token() }}";
+  </script>
   <h2>機能</h2>
   <section>
     <h3>矩形データの追加</h3>
     <form id="form_add_region">
+      {{ form_new.csrf_token }}
+      {{ form_new.hidden_tag() }}
       <p>
-        <label>x: <input type="text" name="x" size="4"></label>
-        <label>y: <input type="text" name="y" size="4"></label>
-        <label>w: <input type="text" name="w" size="4"></label>
-        <label>h: <input type="text" name="h" size="4"></label>
+        {{ form_new.x.label }} {{ form_new.x(size=4) }}
+        {{ form_new.y.label }} {{ form_new.y(size=4) }}
+        {{ form_new.w.label }} {{ form_new.w(size=4) }}
+        {{ form_new.h.label }} {{ form_new.h(size=4) }}
         <input type="button" id="button_add_region" value="追加">
       </p>
     </form>
@@ -46,13 +51,30 @@ document.querySelector('#button_add_region').addEventListener('click',function()
   var y = +data.get('y');
   var w = +data.get('w');
   var h = +data.get('h');
-  var feature = new ol.Feature({
-    geometry: new ol.geom.Polygon([regionToPolygon(x,y,w,h)]),
-    model: {x:x,y:y,w:w,h:h,id:12345} // TODO: この辺はDBからもらう
+  fetch('http://127.0.0.1:5000/map/1/region/new', {
+    method: 'POST',
+    //headers: {
+    //  'X-CSRFToken': csrf_token
+    //},
+    body: data
+  }).then(response => {
+    if (!response.ok) {
+      // 失敗したときもとりあえず中身見る
+      response.json().then(data => console.log(data));
+      throw new Error("矩形の追加リクエストに失敗しました");
+    }
+    return response.json();
+    var region = response.json();
+  }).then(region => {
+    console.log(region);
+    var feature = new ol.Feature({
+      geometry: new ol.geom.Polygon([regionToPolygon(region.x, region.y, region.w, region.h)]),
+      model: region
+    });
+    addFeature(feature);
+  }).catch(error => {
+    console.log('error!!!', error);
   });
-  console.log(feature);
-  addFeature(feature);
-  // TODO: この時点でDB上にも追加する
 });
     </script>
   </section>

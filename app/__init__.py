@@ -1,7 +1,9 @@
 import os
 
 from flask import Flask
+from flask_wtf.csrf import CSRFProtect
 
+csrf = CSRFProtect()
 
 def create_app(test_config=None):
     # create and configure the app
@@ -36,5 +38,6 @@ def create_app(test_config=None):
     def shutdown_session(exception=None):
         db_session.remove()
     app.cli.add_command(init_db_command)
+    csrf.init_app(app)
 
     return app

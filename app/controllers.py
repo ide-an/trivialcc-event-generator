@@ -5,7 +5,7 @@ from flask import (
 )
 from flask_wtf import FlaskForm
 from wtforms import (
-    StringField, URLField, DateTimeLocalField, HiddenField, TextAreaField
+    StringField, URLField, DateTimeLocalField, HiddenField, TextAreaField, FloatField
 )
 from wtforms.validators import (
     DataRequired, URL, Optional
@@ -163,7 +163,34 @@ def map_edit_region(event_id, map_id):
     if map_ is None:
         abort(404)
     map_regions = MapRegion.query.where(MapRegion.map_id == map_.id).order_by(MapRegion.id).all()
-    return render_template('map/edit_region.html', map=map_, map_regions=map_regions, event=event)
+    form_new = RegionNewForm(map_id=map_.id)
+    return render_template('map/edit_region.html', map=map_, map_regions=map_regions, event=event, form_new=form_new)
+
+# ajax
+@bp.route('/map/<int:map_id>/region/new', methods=['POST'])
+def map_region_new(map_id):
+    form = RegionNewForm()
+    if not form.validate_on_submit():
+        # TODO: エラー用のレスポンス考えたほうがいい
+        return form.errors, 400
+    # TODO: implement
+    map_region = MapRegion(
+            x = form.x.data,
+            y = form.y.data,
+            w = form.w.data,
+            h = form.h.data,
+            map_id = form.map_id.data,
+            )
+    try:
+        db_session.add(map_region)
+        db_session.commit()
+        return map_region.to_json()
+    except Exception as e:
+        db_session.rollback()
+        current_app.logger.error('add map_region failed:{}'.format(e))
+        raise e
+        # TODO: エラー用のレスポンス考えたほうがいい
+        #abort(500)
 
 class EventForm(FlaskForm):
     name = StringField('イベント名', validators=[DataRequired()])
@@ -178,4 +205,11 @@ class CircleImportForm(FlaskForm):
 class MapForm(FlaskForm):
     name = StringField('マップ名', validators=[DataRequired()])
     image_url = URLField('画像URL', validators=[DataRequired(), URL()])
+
+class RegionNewForm(FlaskForm):
+    map_id = HiddenField(validators=[DataRequired()])
+    x = FloatField('x', validators=[DataRequired()])
+    y = FloatField('y', validators=[DataRequired()])
+    w = FloatField('w', validators=[DataRequired()])
+    h = FloatField('h', validators=[DataRequired()])
 
