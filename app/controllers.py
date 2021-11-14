@@ -171,9 +171,7 @@ def map_edit_region(event_id, map_id):
 def map_region_new(map_id):
     form = RegionNewForm()
     if not form.validate_on_submit():
-        # TODO: エラー用のレスポンス考えたほうがいい
-        return form.errors, 400
-    # TODO: implement
+        return { 'error': form.errors }, 400
     map_region = MapRegion(
             x = form.x.data,
             y = form.y.data,
@@ -188,9 +186,7 @@ def map_region_new(map_id):
     except Exception as e:
         db_session.rollback()
         current_app.logger.error('add map_region failed:{}'.format(e))
-        raise e
-        # TODO: エラー用のレスポンス考えたほうがいい
-        #abort(500)
+        return { 'error': 'add map_region failed:{}'.format(e) }, 500
 
 class EventForm(FlaskForm):
     name = StringField('イベント名', validators=[DataRequired()])

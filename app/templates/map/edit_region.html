@@ -34,7 +34,6 @@ div.region {
   <section>
     <h3>矩形データの追加</h3>
     <form id="form_add_region">
-      {{ form_new.csrf_token }}
       {{ form_new.hidden_tag() }}
       <p>
         {{ form_new.x.label }} {{ form_new.x(size=4) }}
@@ -47,15 +46,8 @@ div.region {
     <script>
 document.querySelector('#button_add_region').addEventListener('click',function(){ 
   var data = new FormData(document.forms.form_add_region);
-  var x = +data.get('x');
-  var y = +data.get('y');
-  var w = +data.get('w');
-  var h = +data.get('h');
   fetch('http://127.0.0.1:5000/map/1/region/new', {
     method: 'POST',
-    //headers: {
-    //  'X-CSRFToken': csrf_token
-    //},
     body: data
   }).then(response => {
     if (!response.ok) {
