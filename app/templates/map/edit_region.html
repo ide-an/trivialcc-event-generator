@@ -47,7 +47,8 @@ document.querySelector('#button_add_region').addEventListener('click',function()
   var w = +data.get('w');
   var h = +data.get('h');
   var feature = new ol.Feature({
-    geometry: new ol.geom.Polygon([regionToPolygon(x,y,w,h)])
+    geometry: new ol.geom.Polygon([regionToPolygon(x,y,w,h)]),
+    model: {x:x,y:y,w:w,h:h,id:12345} // TODO: この辺はDBからもらう
   });
   console.log(feature);
   addFeature(feature);
@@ -100,17 +101,18 @@ onMapLoad = function(map) {
 };
 // TODO: 地図上のスペースを選択したときに変えたい
 document.querySelector('#button_edit_region').addEventListener('click',function(){ 
+  if (selectedFeature === null) {
+    alert('選択している矩形がありません');
+    return false;
+  }
   var data = new FormData(document.forms.form_edit_region);
   var x = +data.get('x');
   var y = +data.get('y');
   var w = +data.get('w');
   var h = +data.get('h');
-  var feature = new ol.Feature({
-    geometry: new ol.geom.Polygon([regionToPolygon(x,y,w,h)])
-  });
-  console.log(feature);
-  // addFeature(feature);
   // TODO: この時点でDB上にも追加する
+  selectedFeature.setGeometry(new ol.geom.Polygon([regionToPolygon(x,y,w,h)]));
+  // TODO: modelの値も書き換わる
 });
     </script>
   </section>
