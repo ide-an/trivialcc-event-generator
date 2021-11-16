@@ -164,7 +164,8 @@ def map_edit_region(event_id, map_id):
         abort(404)
     map_regions = MapRegion.query.where(MapRegion.map_id == map_.id).order_by(MapRegion.id).all()
     form_new = RegionNewForm(map_id=map_.id)
-    return render_template('map/edit_region.html', map=map_, map_regions=map_regions, event=event, form_new=form_new)
+    form_edit = RegionEditForm(map_id=map_.id)
+    return render_template('map/edit_region.html', map=map_, map_regions=map_regions, event=event, form_new=form_new, form_edit=form_edit)
 
 # ajax
 @bp.route('/map/<int:map_id>/region/new', methods=['POST'])
@@ -188,6 +189,27 @@ def map_region_new(map_id):
         current_app.logger.error('add map_region failed:{}'.format(e))
         return { 'error': 'add map_region failed:{}'.format(e) }, 500
 
+@bp.route('/map/<int:map_id>/region/<int:region_id>/edit', methods=['POST'])
+def map_region_edit(map_id, region_id):
+    form = RegionEditForm()
+    if not form.validate_on_submit():
+        return { 'error': form.errors }, 400
+
+    map_region = MapRegion.query.get(region_id)
+    if MapRegion is None:
+        return { 'error': '対象の矩形が見つかりません'}, 404
+    try:
+        map_region.x = form.x.data
+        map_region.y = form.y.data
+        map_region.w = form.w.data
+        map_region.h = form.h.data
+        db_session.commit()
+        return map_region.to_json()
+    except Exception as e:
+        db_session.rollback()
+        current_app.logger.error('update map_region failed:{}'.format(e))
+        return { 'error': 'update map_region failed:{}'.format(e) }, 500
+
 class EventForm(FlaskForm):
     name = StringField('イベント名', validators=[DataRequired()])
     location = StringField('場所', validators=[DataRequired()])
@@ -209,3 +231,11 @@ class RegionNewForm(FlaskForm):
     w = FloatField('w', validators=[DataRequired()])
     h = FloatField('h', validators=[DataRequired()])
 
+
+class RegionEditForm(FlaskForm):
+    map_id = HiddenField(validators=[DataRequired()])
+    region_id = HiddenField(validators=[DataRequired()])
+    x = FloatField('x', validators=[DataRequired()])
+    y = FloatField('y', validators=[DataRequired()])
+    w = FloatField('w', validators=[DataRequired()])
+    h = FloatField('h', validators=[DataRequired()])

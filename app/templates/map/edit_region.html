@@ -14,7 +14,7 @@ div.region {
 }
 #map {
   height: 600px;
-  width: min(100%, 800px);
+  width: min(100%, 1600px);
   border: 1px #333 solid;
 }
 </style>
@@ -23,14 +23,13 @@ div.region {
 {% block body %}
 
 <section>
-  {{ macros.map_with_region(map_regions, map.image_url, selection=True) }}
+  {{ macros.map_with_region(map_regions, map.image_url) }}
 </section>
 
 <section>
   <script>
 //var csrf_token = "{{ csrf_token() }}";
   </script>
-  <h2>機能</h2>
   <section>
     <h3>矩形データの追加</h3>
     <form id="form_add_region">
@@ -42,11 +41,15 @@ div.region {
         {{ form_new.h.label }} {{ form_new.h(size=4) }}
         <input type="button" id="button_add_region" value="追加">
       </p>
+      <p>
+        <input type="button" id="button_copy_selected" value="選択したセルから値をコピー">
+      </p>
     </form>
     <script>
 document.querySelector('#button_add_region').addEventListener('click',function(){ 
   var data = new FormData(document.forms.form_add_region);
-  fetch('http://127.0.0.1:5000/map/1/region/new', {
+  var map_id = data.get('map_id');
+  fetch('http://127.0.0.1:5000/map/'+map_id+'/region/new', {
     method: 'POST',
     body: data
   }).then(response => {
@@ -60,26 +63,38 @@ document.querySelector('#button_add_region').addEventListener('click',function()
   }).then(region => {
     console.log(region);
     var feature = new ol.Feature({
-      geometry: new ol.geom.Polygon([regionToPolygon(region.x, region.y, region.w, region.h)]),
+      geometry: regionToPolygon(region.x, region.y, region.w, region.h),
       model: region
     });
     addFeature(feature);
+    document.forms.form_add_region.reset();
   }).catch(error => {
     console.log('error!!!', error);
   });
+  return false;
+});
+document.querySelector('#button_copy_selected').addEventListener('click',function(){
+  var data = new FormData(document.forms.form_edit_region);
+  var setField = function(name, value) {
+    document.forms.form_add_region.querySelector('[name='+name+']').value = value;
+  };
+  setField('x', data.get('x'));
+  setField('y', data.get('y'));
+  setField('w', data.get('w'));
+  setField('h', data.get('h'));
 });
     </script>
   </section>
   <section>
     <h3>矩形データの編集</h3>
     <form id="form_edit_region">
+      {{ form_edit.hidden_tag() }}
       <p>
-        <input type="hidden" name="id">
         <label>id: <span id="edit_region_id">-</span></label>
-        <label>x: <input type="text" name="x" size="4"></label>
-        <label>y: <input type="text" name="y" size="4"></label>
-        <label>w: <input type="text" name="w" size="4"></label>
-        <label>h: <input type="text" name="h" size="4"></label>
+        {{ form_edit.x.label }} {{ form_edit.x(size=4) }}
+        {{ form_edit.y.label }} {{ form_edit.y(size=4) }}
+        {{ form_edit.w.label }} {{ form_edit.w(size=4) }}
+        {{ form_edit.h.label }} {{ form_edit.h(size=4) }}
         <input type="button" id="button_edit_region" value="更新">
       </p>
       <p>既存の矩形データを選択して、位置とサイズを変更</p>
@@ -87,46 +102,73 @@ document.querySelector('#button_add_region').addEventListener('click',function()
     <script>
 var selectedFeature = null;
 onMapLoad = function(map) {
-  addOnSelect(function(e) {
+  const selectStyle = new ol.style.Style({
+    fill: new ol.style.Fill({
+      color: 'rgba(255, 0, 0, 0.7)',
+    }),
+    stroke: new ol.style.Stroke({
+      color: '#000',
+      width: 1,
+    }),
+  });
+  const select = new ol.interaction.Select({
+    style: selectStyle
+  });
+  map.addInteraction(select);
+  select.on('select', function(e) {
     // see https://openlayers.org/en/latest/examples/select-features.html
     var form = document.forms.form_edit_region;
-    if (e.selected.length === 0) {
+    var setField = function(name, value) {
+      form.querySelector('[name='+name+']').value = value;
+    };
+    var updateForm = function(id,x,y,w,h) {
       // formのクリア
-      form.querySelector('[name=id]').value = '';
-      form.querySelector('[name=x]').value = '';
-      form.querySelector('[name=y]').value = '';
-      form.querySelector('[name=w]').value = '';
-      form.querySelector('[name=h]').value = '';
+      setField('region_id',id);
+      setField('x', x);
+      setField('y', y);
+      setField('w', w);
+      setField('h', h);
+    };
+    if (e.selected.length === 0) {
+      updateForm('','','','','');
       document.querySelector('#edit_region_id').innerHTML = '-';
-      selected = null;
       return;
     }
     var feature = e.selected[0];
     var model = feature.get('model');
-    // form更新
-    form.querySelector('[name=id]').value = model.id;
-    form.querySelector('[name=x]').value = model.x;
-    form.querySelector('[name=y]').value = model.y;
-    form.querySelector('[name=w]').value = model.w;
-    form.querySelector('[name=h]').value = model.h;
     document.querySelector('#edit_region_id').innerHTML = model.id;
+    // form更新
+    updateForm(model.id, model.x, model.y, model.w, model.h);
     selectedFeature = feature;
   });
 };
-// TODO: 地図上のスペースを選択したときに変えたい
 document.querySelector('#button_edit_region').addEventListener('click',function(){ 
   if (selectedFeature === null) {
     alert('選択している矩形がありません');
     return false;
   }
   var data = new FormData(document.forms.form_edit_region);
-  var x = +data.get('x');
-  var y = +data.get('y');
-  var w = +data.get('w');
-  var h = +data.get('h');
-  // TODO: この時点でDB上にも追加する
-  selectedFeature.setGeometry(new ol.geom.Polygon([regionToPolygon(x,y,w,h)]));
-  // TODO: modelの値も書き換わる
+  var map_id = data.get('map_id');
+  var region_id = data.get('region_id');
+  fetch('http://127.0.0.1:5000/map/'+map_id+'/region/'+region_id+'/edit', {
+    method: 'POST',
+    body: data
+  }).then(response => {
+    if (!response.ok) {
+      // 失敗したときもとりあえず中身見る
+      response.json().then(data => console.log(data));
+      throw new Error("矩形の更新リクエストに失敗しました");
+    }
+    return response.json();
+    var region = response.json();
+  }).then(region => {
+    console.log(region);
+    selectedFeature.setGeometry(regionToPolygon(region.x, region.y, region.w, region.h));
+    selectedFeature.set('model', region);
+  }).catch(error => {
+    console.log('error!!!', error);
+  });
+  return false;
 });
     </script>
   </section>
