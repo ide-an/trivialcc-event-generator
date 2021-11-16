@@ -3,9 +3,9 @@
 
 {% block title %}{% block header %}矩形データからスペースへのマッピング{% endblock %}{% endblock %}
 {% block head %}
-  <script src="{{ url_for('static', filename='openlayers-v6.9.0/ol.js') }}"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='openlayers-v6.9.0/ol.css') }}">
-  <style type="text/css">
+<script src="{{ url_for('static', filename='openlayers-v6.9.0/ol.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='openlayers-v6.9.0/ol.css') }}">
+<style type="text/css">
 div.region {
   position: absolute;
   border: 1px solid #333;
@@ -14,19 +14,155 @@ div.region {
 }
 #map {
   height: 600px;
-  width: min(100%, 800px);
+  width: min(100%, 1600px);
   border: 1px #333 solid;
 }
-  </style>
+#box-container {
+  display: flex;
+}
+#box-map{
+  height: 600px;
+  width: min(100%, 1600px);
+}
+#box-trace{
+  width: min(100%, 400px);
+}
+</style>
 {% endblock %}
 
 {% block body %}
-  <section>
-    {{ macros.map_with_region(map_regions, map.image_url) }}
-  </section>
-  <section>
-    <h2>機能</h2>
-    <p>矩形データとサークルスペースとのマッピング</p>
-    <p>マッピングの取り消し</p>
-  </section>
+
+<section id="box-container">
+<section id="box-map">
+  {{ macros.map_with_region(map_regions, url_for('static', filename='arts8_mai-1.png')) }}
+  {# macros.map_with_region(map_regions, map.image_url) #}
+</section>
+
+<section id="box-trace">
+  <p><textarea id="trace-output" rows="30" cols="50"></textarea></p>
+  <ul id="trace-list">
+    <li>
+      <input type="checkbox" checked>trace 1: <select>
+        <option value="" >space name</option>
+        <option value="1">あ-01</option>
+        <option value="2">あ-02</option>
+        <option value="3">あ-03</option>
+      </select>
+    </li>
+    <li>
+      <input type="checkbox" >trace 2: <select>
+        <option value="" >space name</option>
+        <option value="1">あ-01</option>
+        <option value="2">あ-02</option>
+        <option value="3">あ-03</option>
+      </select>
+    </li>
+
+  <ul>
+</section>
+</section>
+
+<section>
+  <h2>機能</h2>
+  <p>矩形データとサークルスペースとのマッピング</p>
+  <p>マッピングの取り消し</p>
+  <p>線を引っ張ると線の下にあるセルが順に選択されるイメージ
+</section>
+
+<template id="trace-list-element">
+    <li>
+      <input type="checkbox" class="enabled" checked>trace 2: <select>
+        <option value="" >space name</option>
+        <option value="1">あ-01</option>
+        <option value="2">あ-02</option>
+        <option value="3">あ-03</option>
+      </select>
+    </li>
+</template>
+<script>
+var g_map;
+var traces = [];
+  const selectedStyle = new ol.style.Style({
+    fill: new ol.style.Fill({
+      color: 'rgba(255, 0, 0, 0.6)',
+    }),
+    stroke: new ol.style.Stroke({
+      color: '#333',
+      width: 2,
+    }),
+  });
+function addTrace(features) {
+  traces.push({firstSpace:null,enabled:true,features:features});
+  // build str
+  var str = "";
+  var traceid = 0;
+  for (const tr of traces) {
+    str += (tr ? tr.id : "null") +": regions[\n";
+    for (const f of tr.features) {
+      const m = f.get("model");
+      str += JSON.stringify(m)+"\n";
+    }
+    str += "]\n";
+    //
+    var el = document.querySelector("#trace-list-element").content.cloneNode(true);
+    var checkbox =el.querySelector("input.enabled");
+    checkbox.dataset.traceid = traceid;
+    checkbox.textContent = "trace " + traceid + ":";
+    checkbox.addEventListener('change', (e) => {
+      const traceid = e.target.dataset.traceid ;
+      var trace = traces[traceid];
+      if(e.target.checked) {
+        trace.enabled = true;
+        for (const f of trace.features){
+          f.setStyle(selectedStyle);
+        }
+      }else {
+        trace.enabled = false;
+        for (const f of trace.features){
+          f.setStyle(undefined);
+        }
+      }
+    });
+    document.querySelector("#trace-list").appendChild(el);
+    traceid += 1;
+  }
+  document.querySelector("#trace-output").value = str;
+}
+onMapLoad = function(map) {
+  g_map = map;
+
+  const source = new ol.source.Vector({wrapX: false});
+  const vector = new ol.layer.Vector({
+    source: source,
+  });
+  map.addLayer(vector);
+  const draw = new ol.interaction.Draw({
+    source: source,
+    type: 'LineString',
+  });
+  draw.on('drawend', (e) => {
+    // 経路を取得
+    const line = e.feature.getGeometry();
+    let traceFeatures = [];
+    // TODO: この辺はmacro側でラップしたい
+    let featureLayerSource = map.getLayers().getArray()[1].getSource();
+    const len = line.getLength();
+    // 経路上のスペースを集める
+    for (var i=0; i<len; i++) {
+      var coord = line.getCoordinateAt(i/len);
+      var features = featureLayerSource.getFeaturesAtCoordinate(coord);
+      for (const f of features) {
+        const model = f.get('model');
+        if (! traceFeatures.some((r) => r.get('model').id === model.id)) {
+          traceFeatures.push(f);
+          f.setStyle(selectedStyle);
+        }
+      }
+    }
+    console.log(traceFeatures);
+    addTrace(traceFeatures);
+  });
+  map.addInteraction(draw);
+};
+</script>
 {% endblock %}

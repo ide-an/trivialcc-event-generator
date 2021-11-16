@@ -18,7 +18,6 @@ var addFeature, regionToPolygon, onMapLoad = (x) => x;
       [x,img.height - y - h]
     ]]);
   };
-  // 外からいじりたいのでグローバルスコープに置いておく
   var map, source;
   img.onload = function() {
     const projection = new ol.proj.Projection({
