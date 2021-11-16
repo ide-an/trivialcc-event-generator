@@ -41,22 +41,6 @@ div.region {
 <section id="box-trace">
   <p><textarea id="trace-output" rows="30" cols="50"></textarea></p>
   <ul id="trace-list">
-    <li>
-      <input type="checkbox" checked>trace 1: <select>
-        <option value="" >space name</option>
-        <option value="1">あ-01</option>
-        <option value="2">あ-02</option>
-        <option value="3">あ-03</option>
-      </select>
-    </li>
-    <li>
-      <input type="checkbox" >trace 2: <select>
-        <option value="" >space name</option>
-        <option value="1">あ-01</option>
-        <option value="2">あ-02</option>
-        <option value="3">あ-03</option>
-      </select>
-    </li>
 
   <ul>
 </section>
@@ -71,11 +55,11 @@ div.region {
 
 <template id="trace-list-element">
     <li>
-      <input type="checkbox" class="enabled" checked>trace 2: <select>
+      <input type="checkbox" class="enabled" checked><label class="enabled">trace 2:</label><select>
         <option value="" >space name</option>
-        <option value="1">あ-01</option>
-        <option value="2">あ-02</option>
-        <option value="3">あ-03</option>
+        {% for space in spaces %}
+        <option value="{{ space.id }}">{{ space.name }}</option>
+        {% endfor %}
       </select>
     </li>
 </template>
@@ -92,41 +76,36 @@ var traces = [];
     }),
   });
 function addTrace(features) {
-  traces.push({firstSpace:null,enabled:true,features:features});
-  // build str
-  var str = "";
-  var traceid = 0;
-  for (const tr of traces) {
-    str += (tr ? tr.id : "null") +": regions[\n";
-    for (const f of tr.features) {
-      const m = f.get("model");
-      str += JSON.stringify(m)+"\n";
-    }
-    str += "]\n";
-    //
-    var el = document.querySelector("#trace-list-element").content.cloneNode(true);
-    var checkbox =el.querySelector("input.enabled");
-    checkbox.dataset.traceid = traceid;
-    checkbox.textContent = "trace " + traceid + ":";
-    checkbox.addEventListener('change', (e) => {
-      const traceid = e.target.dataset.traceid ;
-      var trace = traces[traceid];
-      if(e.target.checked) {
-        trace.enabled = true;
-        for (const f of trace.features){
-          f.setStyle(selectedStyle);
-        }
-      }else {
-        trace.enabled = false;
-        for (const f of trace.features){
-          f.setStyle(undefined);
-        }
-      }
-    });
-    document.querySelector("#trace-list").appendChild(el);
-    traceid += 1;
+  if (features.length < 1) {
+    // 空なら何もしない
+    return;
   }
-  document.querySelector("#trace-output").value = str;
+  traces.push({firstSpace:null,enabled:true,features:features});
+  var traceid = traces.length - 1;
+  // UIへの追加
+  var el = document.querySelector("#trace-list-element").content.cloneNode(true);
+  var label =el.querySelector("label.enabled");
+  label.textContent = "trace " + traceid + ":";
+  var checkbox =el.querySelector("input.enabled");
+  checkbox.dataset.traceid = traceid;
+  checkbox.addEventListener('change', (e) => {
+    const traceid = e.target.dataset.traceid ;
+    var trace = traces[traceid];
+    if(e.target.checked) {
+      trace.enabled = true;
+      for (const f of trace.features){
+        f.setStyle(selectedStyle);
+      }
+    }else {
+      trace.enabled = false;
+      for (const f of trace.features){
+        f.setStyle(undefined);
+      }
+    }
+  });
+  // TODO: selectの初期値をいい感じにしたい。一個前のtraceのspaceid とか？
+  document.querySelector("#trace-list").appendChild(el);
+  // TODO: traceもdbに保存したいか？
 }
 onMapLoad = function(map) {
   g_map = map;

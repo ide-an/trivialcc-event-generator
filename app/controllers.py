@@ -11,7 +11,7 @@ from wtforms.validators import (
     DataRequired, URL, Optional
 )
 from app.models import (
-    Event, Circle, Map, MapRegion
+    Event, Circle, Map, MapRegion, Space
 )
 from app.db import db_session
 from app.services import (
@@ -152,7 +152,8 @@ def map_edit_mapping(event_id, map_id):
     if map_ is None:
         abort(404)
     map_regions = MapRegion.query.where(MapRegion.map_id == map_.id).order_by(MapRegion.id).all()
-    return render_template('map/edit_mapping.html', map=map_, map_regions=map_regions, event=event)
+    spaces = Space.query.where(Space.event_id == event.id).order_by(Space.id).all()
+    return render_template('map/edit_mapping.html', map=map_, map_regions=map_regions, event=event, spaces=spaces)
 
 @bp.route('/event/<int:event_id>/map/<int:map_id>/edit_region')
 def map_edit_region(event_id, map_id):
