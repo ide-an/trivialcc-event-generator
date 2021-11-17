@@ -27,6 +27,12 @@ div.region {
 #box-trace{
   width: min(100%, 400px);
 }
+ul.trace-detail-list {
+  display: none;
+}
+.show-trace-detail-list:checked ~ ul.trace-detail-list {
+  display: block;
+}
 </style>
 {% endblock %}
 
@@ -34,12 +40,11 @@ div.region {
 
 <section id="box-container">
 <section id="box-map">
-  {{ macros.map_with_region(map_regions, url_for('static', filename='arts8_mai-1.png')) }}
-  {# macros.map_with_region(map_regions, map.image_url) #}
+  {# {{ macros.map_with_region(map_regions, url_for('static', filename='arts8_mai-1.png')) }} #}
+  {{ macros.map_with_region(map_regions, map.image_url) }}
 </section>
 
 <section id="box-trace">
-  <p><textarea id="trace-output" rows="30" cols="50"></textarea></p>
   <ul id="trace-list">
 
   <ul>
@@ -55,16 +60,24 @@ div.region {
 
 <template id="trace-list-element">
     <li>
-      <input type="checkbox" class="enabled" checked><label class="enabled">trace 2:</label><select>
+      <input type="checkbox" class="enabled" checked><label class="enabled">trace 2:</label><select class="space-select">
         <option value="" >space name</option>
         {% for space in spaces %}
         <option value="{{ space.id }}">{{ space.name }}</option>
         {% endfor %}
       </select>
+      <input type="checkbox" class="show-trace-detail-list">
+      <label>detail</label>
+      <ul class="trace-detail-list">
+      </ul>
     </li>
 </template>
 <script>
 var g_map;
+var spaces = [];
+{% for space in spaces %}
+spaces.push({id:"{{ space.id }}", name: "{{ space.name }}"});
+{% endfor %}
 var traces = [];
   const selectedStyle = new ol.style.Style({
     fill: new ol.style.Fill({
@@ -103,6 +116,28 @@ function addTrace(features) {
       }
     }
   });
+  var select = el.querySelector(".space-select");
+  select.dataset.traceid = traceid;
+  select.addEventListener("change", (e) => {
+    var id = e.target.value;
+    var spaces_idx = spaces.findIndex((x) => x.id === id);
+    var trace_li = e.target.parentNode.querySelectorAll(".trace-detail-list li");
+    const traceid = e.target.dataset.traceid ;
+    var trace = traces[traceid];
+    var i = 0;
+    for(var f of trace.features) {
+      const sp = spaces[spaces_idx];
+      trace_li[i].textContent = sp.name;
+      i++;
+      spaces_idx++;
+    }
+  });
+  var tracelist = el.querySelector(".trace-detail-list");
+  for(var f of features) {
+    var li = document.createElement("li");
+    li.textContent = '-';
+    tracelist.appendChild(li);
+  }
   // TODO: selectの初期値をいい感じにしたい。一個前のtraceのspaceid とか？
   document.querySelector("#trace-list").appendChild(el);
   // TODO: traceもdbに保存したいか？
