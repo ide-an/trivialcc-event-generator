@@ -13,19 +13,22 @@ div.region {
   background-color: rgba(255,0,0,0.5);
 }
 #map {
-  height: 600px;
-  width: min(100%, 1600px);
+  height: 100%;
+  width: 100%;
   border: 1px #333 solid;
 }
 #box-container {
   display: flex;
+  height: 800px;
 }
 #box-map{
-  height: 600px;
+  height: 100%;
   width: min(100%, 1600px);
 }
 #box-trace{
+  height: 100%;
   width: min(100%, 400px);
+  overflow-y: scroll;
 }
 ul.trace-detail-list {
   display: none;
@@ -52,25 +55,33 @@ ul.trace-detail-list {
 </section>
 
 <section>
-  <h2>機能</h2>
-  <p>矩形データとサークルスペースとのマッピング</p>
-  <p>マッピングの取り消し</p>
-  <p>線を引っ張ると線の下にあるセルが順に選択されるイメージ
+  <h2>使い方</h2>
+  <ol>
+    <li>地図上で線を引くと、その線をなぞるように矩形が選択される（trace）</li>
+    <li>traceの最初の矩形をどのスペースにするか指定すると、選択された矩形に順にスペースが対応付けられる</li>
+    <li>無効にしたいtraceはチェックボックスで無効にできる</li>
+    <li>すべてのマッピングが終わったら、下のボタンでマッピングを保存する</li>
+  </ol>
+  <p><input type="button" value="マッピングの保存"></p>
+  <p><strong>注意：traceはサーバに保存されないのでリロードすると消える</strong></p>
+  <p>マッピングし直すときは下のボタンでマッピングを全削除する。誤爆しないようにページ分けるかalert出すかしたい</p>
+  <p><input type="button" value="マッピングの全削除"></p>
 </section>
 
+<datalist id="space-list">
+  {% for space in spaces %}
+  <option value="{{ space.name }}">
+  {% endfor %}
+</datalist>
 <template id="trace-list-element">
-    <li>
-      <input type="checkbox" class="enabled" checked><label class="enabled">trace 2:</label><select class="space-select">
-        <option value="" >space name</option>
-        {% for space in spaces %}
-        <option value="{{ space.id }}">{{ space.name }}</option>
-        {% endfor %}
-      </select>
-      <input type="checkbox" class="show-trace-detail-list">
-      <label>detail</label>
-      <ul class="trace-detail-list">
-      </ul>
-    </li>
+  <li>
+    <input type="checkbox" class="enabled" checked><label class="enabled">trace 2:</label>
+    <input type="text" list="space-list" placeholder="あ-01" size="5" class="space-select">
+    <input type="checkbox" class="show-trace-detail-list">
+    <label>detail</label>
+    <ul class="trace-detail-list">
+    </ul>
+  </li>
 </template>
 <script>
 var g_map;
@@ -79,15 +90,16 @@ var spaces = [];
 spaces.push({id:"{{ space.id }}", name: "{{ space.name }}"});
 {% endfor %}
 var traces = [];
-  const selectedStyle = new ol.style.Style({
-    fill: new ol.style.Fill({
-      color: 'rgba(255, 0, 0, 0.6)',
-    }),
-    stroke: new ol.style.Stroke({
-      color: '#333',
-      width: 2,
-    }),
-  });
+const selectedStyle = new ol.style.Style({
+  fill: new ol.style.Fill({
+    color: 'rgba(255, 0, 0, 0.6)',
+  }),
+  stroke: new ol.style.Stroke({
+    color: '#333',
+    width: 2,
+  }),
+});
+// TODO: traceのオブジェクトに対する操作として扱いたい
 function addTrace(features) {
   if (features.length < 1) {
     // 空なら何もしない
@@ -119,8 +131,8 @@ function addTrace(features) {
   var select = el.querySelector(".space-select");
   select.dataset.traceid = traceid;
   select.addEventListener("change", (e) => {
-    var id = e.target.value;
-    var spaces_idx = spaces.findIndex((x) => x.id === id);
+    var name = e.target.value;
+    var spaces_idx = spaces.findIndex((x) => x.name === name);
     var trace_li = e.target.parentNode.querySelectorAll(".trace-detail-list li");
     const traceid = e.target.dataset.traceid ;
     var trace = traces[traceid];
