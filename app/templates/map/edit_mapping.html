@@ -282,13 +282,11 @@ onMapLoad = function(map) {
     // 経路を取得
     const line = e.feature.getGeometry();
     let traceFeatures = [];
-    // TODO: この辺はmacro側でラップしたい
-    let featureLayerSource = map.getLayers().getArray()[1].getSource();
     const len = line.getLength();
     // 経路上のスペースを集める
     for (var i=0; i<len; i++) {
       var coord = line.getCoordinateAt(i/len);
-      var features = featureLayerSource.getFeaturesAtCoordinate(coord);
+      var features = getFeaturesAtCoordinate(coord);
       for (const f of features) {
         const model = f.get('model');
         if (! traceFeatures.some((r) => r.get('model').id === model.id)) {

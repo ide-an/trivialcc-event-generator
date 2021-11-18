@@ -2,10 +2,11 @@
 <div id="{{ map_dom_id }}"></div>
 <script type="text/javascript">
 // 外に出す関数
-var addFeature, regionToPolygon, onMapLoad = (x) => x;
+var addFeature, regionToPolygon, getFeaturesAtCoordinate, onMapLoad = (x) => x;
 (function(){ 
   var imgUrl = "{{ map_image_url }}";
   var img = new Image();
+  var map, source;
   // 外に出す関数の定義
   addFeature = function(feature) {
     source.addFeature(feature);
@@ -18,7 +19,9 @@ var addFeature, regionToPolygon, onMapLoad = (x) => x;
       [x,img.height - y - h]
     ]]);
   };
-  var map, source;
+  getFeaturesAtCoordinate = function(coord) {
+    return source.getFeaturesAtCoordinate(coord);
+  };
   img.onload = function() {
     const projection = new ol.proj.Projection({
       code: 'static-image',

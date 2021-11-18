@@ -141,7 +141,8 @@ def map_detail(event_id, map_id):
     if map_ is None:
         abort(404)
     map_regions = MapRegion.query.where(MapRegion.map_id == map_.id).order_by(MapRegion.id).all()
-    return render_template('map/detail.html', map=map_, map_regions=map_regions, event=event)
+    circles_spaces = Circle.find_by_event(event)
+    return render_template('map/detail.html', map=map_, map_regions=map_regions, event=event, circles_spaces=circles_spaces)
 
 @bp.route('/event/<int:event_id>/map/<int:map_id>/edit_mapping')
 def map_edit_mapping(event_id, map_id):

@@ -3,9 +3,9 @@
 
 {% block title %}{% block header %}マップ詳細{% endblock %}{% endblock %}
 {% block head %}
-  <script src="{{ url_for('static', filename='openlayers-v6.9.0/ol.js') }}"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='openlayers-v6.9.0/ol.css') }}">
-  <style type="text/css">
+<script src="{{ url_for('static', filename='openlayers-v6.9.0/ol.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='openlayers-v6.9.0/ol.css') }}">
+<style type="text/css">
 div.region {
   position: absolute;
   border: 1px solid #333;
@@ -17,25 +17,104 @@ div.region {
   width: min(100%, 800px);
   border: 1px #333 solid;
 }
-  </style>
+
+.ol-popup {
+  position: absolute;
+  background-color: rgba(255,255,255,0.7);
+  border: 1px solid #cccccc;
+  bottom: 12px;
+  min-width: 140px;
+}
+</style>
 {% endblock %}
 
 {% block body %}
-  <section>
-    <p>
-      <span>マップ名:</span>
-      <span>{{ map.name }}</span>
-    </p>
-    <p>
-      <span>画像URL:</span>
-      <span><a href="{{ map.image_url }}">{{ map.image_url }}</a></span>
-    </p>
-    {{ macros.map_with_region(map_regions, map.image_url) }}
-  </section>
-  <section>
-    <h2>マップデータの作成</h2>
-    <p><a href="{{ url_for('controllers.map_edit_region', map_id=map.id, event_id=event.id) }}">矩形データの編集</a></p>
-    <p><a href="{{ url_for('controllers.map_edit_mapping', map_id=map.id, event_id=event.id) }}">矩形データからスペースへのマッピング</a></p>
-    <p><a href="show_mapping.html">マッピング結果確認</a></p>
-  </section>
+<section>
+  <p>
+    <span>マップ名:</span>
+    <span>{{ map.name }}</span>
+  </p>
+  <p>
+    <span>画像URL:</span>
+    <span><a href="{{ map.image_url }}">{{ map.image_url }}</a></span>
+  </p>
+  <p>
+    表示：<label><input type="checkbox" id="show_circle" checked>サークル</label><label><input type="checkbox" id="show_space">スペース</label>
+  </p>
+  {{ macros.map_with_region(map_regions, map.image_url) }}
+</section>
+<div id="popup" class="ol-popup">
+  <div id="popup-content"></div>
+</div>
+<script>
+var g_circlesSpaces = [];
+{% for circle, space in circles_spaces %}
+g_circlesSpaces.push({
+  space_id: '{{ space.id }}',
+  space_name: '{{ space.name }}',
+  circle_name: '{{ circle.name }}',
+  circle_penname: '{{ circle.penname }}',
+});
+{% endfor %}
+onMapLoad = function(map) {
+  const selectStyle = new ol.style.Style({
+    fill: new ol.style.Fill({
+      color: 'rgba(255, 0, 0, 0.4)',
+    }),
+    stroke: new ol.style.Stroke({
+      color: '#000',
+      width: 1,
+    }),
+  });
+  const container = document.getElementById('popup');
+  const content = document.getElementById('popup-content');
+  const overlay = new ol.Overlay({
+    element: container,
+    autoPan: true,
+    autoPanAnimation: {
+      duration: 250,
+    },
+  });
+  map.addOverlay(overlay);
+  let selected = [];
+  map.on('pointermove', function (evt) {
+    selected.forEach(f => {
+      f.setStyle(undefined);
+    });
+    const coordinate = evt.coordinate;
+    let features = getFeaturesAtCoordinate(coordinate);
+    if (!features || features.length < 1) {
+      return;
+    }
+    let contentBody = "";
+    const showSpace = document.querySelector('#show_space').checked;
+    const showCircle = document.querySelector('#show_circle').checked;
+    features.forEach( f => {
+      const region = f.get('model');
+      if (region && region.space_id !== null) {
+        let circle = g_circlesSpaces.find(x => x.space_id == region.space_id);
+        if (showCircle) {
+          contentBody += `<p>${circle.circle_name}</p>`
+        }
+        if (showSpace) {
+          contentBody += `<p>${circle.space_name}</p>`
+        }
+      }
+      f.setStyle(selectStyle);
+      selected.push(f);
+    })
+    if (contentBody !== "") {
+      content.innerHTML = contentBody;
+      overlay.setPosition(coordinate);
+    } else {
+      overlay.setPosition(undefined);
+    }
+  });
+};
+</script>
+<section>
+  <h2>マップデータの作成</h2>
+  <p><a href="{{ url_for('controllers.map_edit_region', map_id=map.id, event_id=event.id) }}">矩形データの編集</a></p>
+  <p><a href="{{ url_for('controllers.map_edit_mapping', map_id=map.id, event_id=event.id) }}">矩形データからスペースへのマッピング</a></p>
+</section>
 {% endblock %}
