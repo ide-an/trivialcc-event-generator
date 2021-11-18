@@ -23,7 +23,7 @@ div.region {
   background-color: rgba(255,255,255,0.7);
   border: 1px solid #cccccc;
   bottom: 12px;
-  min-width: 140px;
+  min-width: 10em;
 }
 </style>
 {% endblock %}
@@ -84,6 +84,7 @@ onMapLoad = function(map) {
     const coordinate = evt.coordinate;
     let features = getFeaturesAtCoordinate(coordinate);
     if (!features || features.length < 1) {
+      overlay.setPosition(undefined);
       return;
     }
     let contentBody = "";
