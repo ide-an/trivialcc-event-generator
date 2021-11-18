@@ -42,16 +42,16 @@ ul.trace-detail-list {
 {% block body %}
 
 <section id="box-container">
-<section id="box-map">
-  {# {{ macros.map_with_region(map_regions, url_for('static', filename='arts8_mai-1.png')) }} #}
-  {{ macros.map_with_region(map_regions, map.image_url) }}
-</section>
+  <section id="box-map">
+    {# {{ macros.map_with_region(map_regions, url_for('static', filename='arts8_mai-1.png')) }} #}
+    {{ macros.map_with_region(map_regions, map.image_url) }}
+  </section>
 
-<section id="box-trace">
-  <ul id="trace-list">
+  <section id="box-trace">
+    <ul id="trace-list">
 
-  <ul>
-</section>
+      <ul>
+  </section>
 </section>
 
 <section>
@@ -62,10 +62,10 @@ ul.trace-detail-list {
     <li>無効にしたいtraceはチェックボックスで無効にできる</li>
     <li>すべてのマッピングが終わったら、下のボタンでマッピングを保存する</li>
   </ol>
-  <p><input type="button" value="マッピングの保存"></p>
+  <p><input type="button" id="button_save_mapping" value="マッピングの保存"></p>
   <p><strong>注意：traceはサーバに保存されないのでリロードすると消える</strong></p>
   <p>マッピングし直すときは下のボタンでマッピングを全削除する。誤爆しないようにページ分けるかalert出すかしたい</p>
-  <p><input type="button" value="マッピングの全削除"></p>
+  <p><input type="button" id="button_reset_mapping" value="マッピングの全削除"></p>
 </section>
 
 <datalist id="space-list">
@@ -77,7 +77,7 @@ ul.trace-detail-list {
   <li>
     <input type="checkbox" class="enabled" checked><label class="enabled">trace 2:</label>
     <input type="text" list="space-list" placeholder="あ-01" size="5" class="space-select">
-    <input type="checkbox" class="show-trace-detail-list">
+    <input type="checkbox" class="show-trace-detail-list" checked>
     <label>detail</label>
     <ul class="trace-detail-list">
     </ul>
@@ -85,11 +85,12 @@ ul.trace-detail-list {
 </template>
 <script>
 var g_map;
-var spaces = [];
+var g_csrf = "{{ csrf_token() }}";
+var g_spaces = [];
 {% for space in spaces %}
-spaces.push({id:"{{ space.id }}", name: "{{ space.name }}"});
+g_spaces.push({id:"{{ space.id }}", name: "{{ space.name }}"});
 {% endfor %}
-var traces = [];
+var g_traces = [];
 const selectedStyle = new ol.style.Style({
   fill: new ol.style.Fill({
     color: 'rgba(255, 0, 0, 0.6)',
@@ -99,67 +100,178 @@ const selectedStyle = new ol.style.Style({
     width: 2,
   }),
 });
-// TODO: traceのオブジェクトに対する操作として扱いたい
+const hoverStyle = new ol.style.Style({
+  fill: new ol.style.Fill({
+    color: 'rgba(0, 0, 255, 0.6)',
+  }),
+  stroke: new ol.style.Stroke({
+    color: '#333',
+    width: 2,
+  }),
+});
+class Trace {
+  static idbase = 0;
+  constructor(features) {
+    this.features = features;
+    this.enabled = true;
+    this.spaces = [];
+    Trace.idbase++;
+    this.id = Trace.idbase;
+  }
+  setSpaces(firstSpaceName) {
+    const spaceStart = g_spaces.findIndex((x) => x.name === firstSpaceName);
+    let spaces = g_spaces.slice(spaceStart, spaceStart + this.features.length);
+    if (spaces.length !== this.features.length) {
+      // 長さ足りん
+      return false;
+    }
+    this.spaces = spaces;
+    return true;
+  }
+  enable() {
+    this.enabled = true;
+    for (const f of this.features){
+      f.setStyle(selectedStyle);
+    }
+  }
+  disable() {
+    this.enabled = false;
+    for (const f of this.features){
+      f.setStyle(undefined);
+    }
+  }
+  hover(i) {
+    this.features[i].setStyle(hoverStyle);
+  }
+  unhover(i) {
+    // selectedStyle決め打ちは微妙ではある
+    this.features[i].setStyle(selectedStyle);
+  }
+  save() {
+    if (!this.enabled) {
+      return Promise.resolve(undefined);
+    }
+    return Promise.all(this.features.map((f, i) => {
+      let region = f.get('model');
+      let space = this.spaces[i];
+      let data = new FormData()
+      data.set('space_id', space.id);
+      return fetch(`/region/${region.id}/space`, {
+        method: 'POST',
+        body: data,
+        headers: {
+          'X-CSRFToken': g_csrf,
+        }
+      }).then(response => {
+        if (!response.ok) {
+          // 失敗したときもとりあえず中身見る
+          response.json().then(data => console.log(data));
+          throw new Error("矩形からスペースのマッピングの保存に失敗しました");
+        }
+        return response.json();
+      }).then(json => {
+        f.set('model', json);
+      });
+    }));
+  }
+}
+function getDefaultSpaceName() {
+  if (g_traces.length > 1) {
+    const prevTrace = g_traces[g_traces.length - 2];
+    if (prevTrace.spaces.length > 0) {
+      const prevLastSpace = prevTrace.spaces[prevTrace.spaces.length - 1];
+      if (prevLastSpace !== null && prevLastSpace.name !== null) {
+        const spaceStart = g_spaces.findIndex((x) => x.name === prevLastSpace.name);
+        if (spaceStart + 1 < g_spaces.length) {
+          return g_spaces[spaceStart + 1].name;
+        }
+      }
+    }
+  }
+  return null;
+}
 function addTrace(features) {
   if (features.length < 1) {
     // 空なら何もしない
     return;
   }
-  traces.push({firstSpace:null,enabled:true,features:features});
-  var traceid = traces.length - 1;
+  let trace = new Trace(features);
+  g_traces.push(trace);
+  trace.enable();
   // UIへの追加
   var el = document.querySelector("#trace-list-element").content.cloneNode(true);
   var label =el.querySelector("label.enabled");
-  label.textContent = "trace " + traceid + ":";
+  label.textContent = "trace " + trace.id + ":";
   var checkbox =el.querySelector("input.enabled");
-  checkbox.dataset.traceid = traceid;
   checkbox.addEventListener('change', (e) => {
-    const traceid = e.target.dataset.traceid ;
-    var trace = traces[traceid];
     if(e.target.checked) {
-      trace.enabled = true;
-      for (const f of trace.features){
-        f.setStyle(selectedStyle);
-      }
+      trace.enable();
     }else {
-      trace.enabled = false;
-      for (const f of trace.features){
-        f.setStyle(undefined);
-      }
+      trace.disable();
     }
   });
   var select = el.querySelector(".space-select");
-  select.dataset.traceid = traceid;
-  select.addEventListener("change", (e) => {
-    var name = e.target.value;
-    var spaces_idx = spaces.findIndex((x) => x.name === name);
-    var trace_li = e.target.parentNode.querySelectorAll(".trace-detail-list li");
-    const traceid = e.target.dataset.traceid ;
-    var trace = traces[traceid];
-    var i = 0;
-    for(var f of trace.features) {
-      const sp = spaces[spaces_idx];
-      trace_li[i].textContent = sp.name;
-      i++;
-      spaces_idx++;
-    }
-  });
-  var tracelist = el.querySelector(".trace-detail-list");
-  for(var f of features) {
-    var li = document.createElement("li");
-    li.textContent = '-';
-    tracelist.appendChild(li);
+  var onchange = (name)=>{
+    trace.setSpaces(name);
+    var trace_li = select.parentNode.querySelectorAll(".trace-detail-list li");
+    trace_li.forEach((li,i) => {
+      li.textContent = trace.spaces[i].name;
+    });
   }
-  // TODO: selectの初期値をいい感じにしたい。一個前のtraceのspaceid とか？
+  select.addEventListener("change", (e) => onchange(e.target.value));
+  var tracelist = el.querySelector(".trace-detail-list");
+  trace.features.forEach((v,i) => {
+    var li = document.createElement("li");
+    li.addEventListener('mouseenter', (e) => { trace.hover(i) });
+    li.addEventListener('mouseleave', (e) => { trace.unhover(i) });
+    tracelist.appendChild(li);
+  })
+  var spaceName = getDefaultSpaceName();
+  if (spaceName) {
+    select.value = spaceName;
+    onchange(spaceName);
+  }
   document.querySelector("#trace-list").appendChild(el);
-  // TODO: traceもdbに保存したいか？
 }
+document.querySelector("#button_save_mapping").addEventListener('click', (e) => {
+  Promise.all(g_traces.map(tr => tr.save()))
+    .then(() => {
+      alert("保存しました");
+    }).catch(error => {
+      alert("保存に失敗しました");
+      console.log('error!!!', error);
+    });
+});
+document.querySelector("#button_reset_mapping").addEventListener('click', (e) => {
+  if (window.confirm("本当にマッピングを削除しますか")) {
+    fetch('/map/{{ map.id }}/region/reset', {
+      method: 'DELETE',
+      headers: {
+        'X-CSRFToken': g_csrf,
+      }
+    }).then(response => {
+      if (!response.ok) {
+        // 失敗したときもとりあえず中身見る
+        response.json().then(data => console.log(data));
+        throw new Error("マッピングの削除に失敗しました");
+      }
+      return response.json();
+    }).then(json => {
+      alert("削除しました");
+    }).catch(error => {
+      alert("保存に失敗しました");
+      console.log('error!!!', error);
+    });
+  }
+});
 onMapLoad = function(map) {
   g_map = map;
 
   const source = new ol.source.Vector({wrapX: false});
   const vector = new ol.layer.Vector({
     source: source,
+    updateWhileAnimating: true,
+    updateWhileInteracting: true,
   });
   map.addLayer(vector);
   const draw = new ol.interaction.Draw({
@@ -181,7 +293,6 @@ onMapLoad = function(map) {
         const model = f.get('model');
         if (! traceFeatures.some((r) => r.get('model').id === model.id)) {
           traceFeatures.push(f);
-          f.setStyle(selectedStyle);
         }
       }
     }

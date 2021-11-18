@@ -137,7 +137,7 @@ def map_detail(event_id, map_id):
     event = Event.query.get(event_id)
     if event is None:
         abort(404)
-    map_ = Map.query.get(event_id)
+    map_ = Map.query.get(map_id)
     if map_ is None:
         abort(404)
     map_regions = MapRegion.query.where(MapRegion.map_id == map_.id).order_by(MapRegion.id).all()
@@ -148,7 +148,7 @@ def map_edit_mapping(event_id, map_id):
     event = Event.query.get(event_id)
     if event is None:
         abort(404)
-    map_ = Map.query.get(event_id)
+    map_ = Map.query.get(map_id)
     if map_ is None:
         abort(404)
     map_regions = MapRegion.query.where(MapRegion.map_id == map_.id).order_by(MapRegion.id).all()
@@ -160,7 +160,7 @@ def map_edit_region(event_id, map_id):
     event = Event.query.get(event_id)
     if event is None:
         abort(404)
-    map_ = Map.query.get(event_id)
+    map_ = Map.query.get(map_id)
     if map_ is None:
         abort(404)
     map_regions = MapRegion.query.where(MapRegion.map_id == map_.id).order_by(MapRegion.id).all()
@@ -197,7 +197,7 @@ def map_region_edit(map_id, region_id):
         return { 'error': form.errors }, 400
 
     map_region = MapRegion.query.get(region_id)
-    if MapRegion is None:
+    if map_region is None:
         return { 'error': '対象の矩形が見つかりません'}, 404
     try:
         map_region.x = form.x.data
@@ -206,6 +206,45 @@ def map_region_edit(map_id, region_id):
         map_region.h = form.h.data
         db_session.commit()
         return map_region.to_json()
+    except Exception as e:
+        db_session.rollback()
+        current_app.logger.error('update map_region failed:{}'.format(e))
+        return { 'error': 'update map_region failed:{}'.format(e) }, 500
+
+@bp.route('/region/<int:region_id>/space', methods=['POST'])
+def region_to_space_save(region_id):
+    form = RegionToSpaceForm()
+    if not form.validate_on_submit():
+        return { 'error': form.errors }, 400
+
+    map_region = MapRegion.query.get(region_id)
+    if map_region is None:
+        return { 'error': '対象の矩形が見つかりません'}, 404
+
+    space = Space.query.get(form.space_id.data)
+    if space is None:
+        return { 'error': '対象のスペースが見つかりません'}, 404
+
+    try:
+        map_region.space_id = space.id
+        db_session.commit()
+        return map_region.to_json()
+    except Exception as e:
+        db_session.rollback()
+        current_app.logger.error('update map_region failed:{}'.format(e))
+        return { 'error': 'update map_region failed:{}'.format(e) }, 500
+
+@bp.route('/map/<int:map_id>/region/reset', methods=['DELETE'])
+def region_to_space_reset(map_id):
+    map_ = Map.query.get(map_id)
+    if map_ is None:
+        abort(404)
+    try:
+        regions = MapRegion.query.where(MapRegion.map_id == map_.id).all()
+        for r in regions:
+            r.space_id = None
+        db_session.commit()
+        return {}
     except Exception as e:
         db_session.rollback()
         current_app.logger.error('update map_region failed:{}'.format(e))
@@ -232,7 +271,6 @@ class RegionNewForm(FlaskForm):
     w = FloatField('w', validators=[DataRequired()])
     h = FloatField('h', validators=[DataRequired()])
 
-
 class RegionEditForm(FlaskForm):
     map_id = HiddenField(validators=[DataRequired()])
     region_id = HiddenField(validators=[DataRequired()])
@@ -240,3 +278,6 @@ class RegionEditForm(FlaskForm):
     y = FloatField('y', validators=[DataRequired()])
     w = FloatField('w', validators=[DataRequired()])
     h = FloatField('h', validators=[DataRequired()])
+
+class RegionToSpaceForm(FlaskForm):
+    space_id = HiddenField(validators=[DataRequired()])
