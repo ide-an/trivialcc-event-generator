@@ -22,13 +22,13 @@ class CircleImportService:
         # とりあえずURLのフォーマットだけ見ておく
         if not_valid_url(row.site_url):
             current_app.logger.info("if not_valid_url(row.site_url):")
-            return False
+            raise Exception('site_urlが不正:{}'.format(row.site_url))
         if not_valid_url(row.pixiv):
             current_app.logger.info("if not_valid_url(row.pixiv):")
-            return False
+            raise Exception('pixiv URLが不正:{}'.format(row.pixiv))
         if not_valid_url(row.twitter):
             current_app.logger.info("if not_valid_url(row.twitter):")
-            return False
+            raise Exception('twitter URLが不正:{}'.format(row.twitter))
         return True
 
     def do_import(self, import_data, event):
@@ -41,8 +41,10 @@ class CircleImportService:
         current_app.logger.info('csv:{}'.format(csv))
         try:
             for row in csv:
-                if not self.validate_row(row):
-                    raise Exception('不正な行:{}'.format(row))
+                try:
+                    self.validate_row(row)
+                except Exception as e:
+                    raise Exception('{}; 不正な行:{}'.format(e, row)) from e
                 space = Space(name=row.space_name, event_id=event.id)
                 db_session.add(space)
                 db_session.flush() # spaceのidを取得するため
