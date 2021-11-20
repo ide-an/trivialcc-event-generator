@@ -43,14 +43,12 @@ ul.trace-detail-list {
 
 <section id="box-container">
   <section id="box-map">
-    {# {{ macros.map_with_region(map_regions, url_for('static', filename='arts8_mai-1.png')) }} #}
     {{ macros.map_with_region(map_regions, map.image_url) }}
   </section>
 
   <section id="box-trace">
-    <ul id="trace-list">
-
-      <ul>
+    <h2>Trace</h2>
+    <ul id="trace-list"><ul>
   </section>
 </section>
 
@@ -60,11 +58,11 @@ ul.trace-detail-list {
     <li>地図上で線を引くと、その線をなぞるように矩形が選択される（trace）</li>
     <li>traceの最初の矩形をどのスペースにするか指定すると、選択された矩形に順にスペースが対応付けられる</li>
     <li>無効にしたいtraceはチェックボックスで無効にできる</li>
-    <li>すべてのマッピングが終わったら、下のボタンでマッピングを保存する</li>
+    <li>すべてのマッピングが終わったら、下のボタンでマッピングを保存する（時間がかかる。保存したらalertが出る）</li>
   </ol>
   <p><input type="button" id="button_save_mapping" value="マッピングの保存"></p>
   <p><strong>注意：traceはサーバに保存されないのでリロードすると消える</strong></p>
-  <p>マッピングし直すときは下のボタンでマッピングを全削除する。誤爆しないようにページ分けるかalert出すかしたい</p>
+  <p>マッピングし直すときは下のボタンでマッピングを全削除する</p>
   <p><input type="button" id="button_reset_mapping" value="マッピングの全削除"></p>
 </section>
 

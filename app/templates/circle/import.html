@@ -4,6 +4,7 @@
 
 {% block body %}
   <section>
+    <p>CSVフォーマットのサークルリストを取り込む</p>
     {% if form.errors %}
       <ul class="errors">
         {% for error_field in form.errors %}
@@ -25,8 +26,6 @@
     </form>
   </section>
   <section>
-    <h2>機能</h2>
-    <p>CSVフォーマットのサークルリストを取り込む</p>
     <p>CSVのフォーマットは下記の通り</p>
     <ul>
       <li>1行につき1スペース、1サークル</li>

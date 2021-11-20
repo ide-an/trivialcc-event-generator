@@ -3,41 +3,46 @@
 {% block title %}{% block header %}イベント詳細{% endblock %}{% endblock %}
 
 {% block body %}
+<section>
+  <p>
+    <span>イベント名:</span>
+    <span>{{ event.name }}</span>
+  </p>
+  <p>
+    <span>場所:</span>
+    <span>{{ event.location }}</span>
+  </p>
+  <p>
+    <span>サイトURL:</span>
+    <span><a href="{{ event.site_url }}">{{ event.site_url }}</a></span>
+  </p>
+  <p>
+    <span>開始日時:</span>
+    <span>{{ event.start_datetime }}</span>
+  </p>
+  <p>
+    <span>終了日時:</span>
+    <span>{{ event.end_datetime }}</span>
+  </p>
+</section>
+<section>
+  <h2>イベント詳細データの作成</h2>
+  <p>サークル→マップの順に追加する</p>
+  <ol>
+    <li><a href="{{ url_for('controllers.circle_import', event_id=event.id) }}">サークルの一括追加</a></li>
+    <li><a href="{{ url_for('controllers.circle_list', event_id=event.id) }}">サークル一覧</a></li>
+    <li><a href="{{ url_for('controllers.map_new', event_id=event.id) }}">マップの追加</a></li>
+  </ol>
   <section>
-    <p>
-      <span>イベント名:</span>
-      <span>{{ event.name }}</span>
-    </p>
-    <p>
-      <span>場所:</span>
-      <span>{{ event.location }}</span>
-    </p>
-    <p>
-      <span>サイトURL:</span>
-      <span><a href="{{ event.site_url }}">{{ event.site_url }}</a></span>
-    </p>
-    <p>
-      <span>開始日時:</span>
-      <span>{{ event.start_datetime }}</span>
-    </p>
-    <p>
-      <span>終了日時:</span>
-      <span>{{ event.end_datetime }}</span>
-    </p>
+    <h3>マップ一覧</h3>
+    <p>追加したマップそれぞれについて、マップ詳細にて矩形の修正やスペースとのマッピングを行う。</p>
+    <ul>
+      {% for map in maps %}
+      <li><a href="{{ url_for('controllers.map_detail', event_id=event.id, map_id=map.id) }}">{{ map.name }}</a></li>
+      {% endfor %}
+    </ul>
   </section>
-  <section>
-    <h2>イベント詳細データの作成</h2>
-    <p><a href="{{ url_for('controllers.circle_import', event_id=event.id) }}">サークルの一括追加</a></p>
-    <p><a href="{{ url_for('controllers.circle_list', event_id=event.id) }}">サークル一覧</a></p>
-    <p><a href="{{ url_for('controllers.map_new', event_id=event.id) }}">マップの追加</a></p>
-    <section>
-      <h3>マップ一覧</h3>
-      <ul>
-        {% for map in maps %}
-        <li><a href="{{ url_for('controllers.map_detail', event_id=event.id, map_id=map.id) }}">{{ map.name }}</a></li>
-        {% endfor %}
-      </ul>
-    </section>
-    <p><a href="{{ url_for('controllers.event_export', event_id=event.id) }}">イベントのエクスポート</a><strong>クリックするとyamlが降ってくる。ボタンのほうがいいかも</strong></p>
-  </section>
+  <p>最後にtrivial-circlecheckに読み込める形式でエクスポートする。</p>
+  <p><a href="{{ url_for('controllers.event_export', event_id=event.id) }}">イベントのエクスポート</a></p>
+</section>
 {% endblock %}
