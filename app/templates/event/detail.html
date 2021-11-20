@@ -38,6 +38,6 @@
         {% endfor %}
       </ul>
     </section>
-    <p><a href="#">イベントのエクスポート</a><strong>クリックするとyamlが降ってくる。ボタンのほうがいいかも</strong></p>
+    <p><a href="{{ url_for('controllers.event_export', event_id=event.id) }}">イベントのエクスポート</a><strong>クリックするとyamlが降ってくる。ボタンのほうがいいかも</strong></p>
   </section>
 {% endblock %}

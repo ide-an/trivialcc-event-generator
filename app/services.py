@@ -2,9 +2,10 @@ from collections import namedtuple
 import csv
 import io
 from app.models import (
-    Event, Circle, Space
+    Event, Circle, Space, Map, MapRegion
 )
 from app.db import db_session
+from sqlalchemy import select
 from flask import current_app
 import validators
 
@@ -59,3 +60,81 @@ class CircleImportService:
         except Exception as e:
             db_session.rollback()
             raise Exception('DBへの保存に失敗しました:{}'.format(e))
+
+class EventExportService:
+    def yaml_event(self, event):
+        # タイムゾーンは+09決め打ち
+        return f"""
+- &event{event.id} !!models.Event
+  name: "{event.name}"
+  location: "{event.location}"
+  startAt: "{event.start_datetime.strftime('%Y-%m-%d %H:%M:%S+09')}"
+  endAt: "{event.end_datetime.strftime('%Y-%m-%d %H:%M:%S+09')}"
+  url: "{event.site_url}"
+"""
+
+    def yaml_circle(self, circle, event):
+        return f"""
+- &circle{circle.id} !!models.Circle
+  name: "{circle.name}"
+  penName: "{circle.penname}"
+  url: "{circle.site_url}"
+  pixivUrl: "{circle.pixiv}"
+  twitterUrl: "{circle.twitter}"
+  event: *event{event.id}
+"""
+
+    def yaml_space(self, space, circle, event):
+        return f"""
+- &space{space.id} !!models.Space
+  name: "{space.name}"
+  event: *event{event.id}
+  circle: *circle{circle.id}
+"""
+
+    def yaml_map(self, map_, event):
+        return f"""
+- &map{map_.id} !!models.Map
+  name: "{map_.name}"
+  imageFile: "{map_.image_url}"
+  event: *event{event.id}
+"""
+
+    def yaml_map_region(self, map_region, space, map_):
+        return f"""
+- &mapEntry{map_region.id} !!models.MapEntry
+  x: {map_region.x}
+  y: {map_region.y}
+  width: {map_region.w}
+  height: {map_region.h}
+  space: *space{space.id}
+  map: *map{map_.id}
+"""
+
+    def do_export(self, event):
+        """
+        イベント情報をyamlに変換する
+        """
+        yaml = ''
+        yaml += self.yaml_event(event)
+        yaml_circles = ''
+        yaml_spaces = ''
+        circles_spaces = Circle.find_by_event(event)
+        for circle, space in circles_spaces:
+            yaml_circles += self.yaml_circle(circle, event)
+            yaml_spaces += self.yaml_space(space, circle, event)
+        yaml += yaml_circles
+        yaml += yaml_spaces
+        maps = Map.query.where(Map.event_id == event.id).order_by(Map.id).all()
+        for map_ in maps:
+            yaml += self.yaml_map(map_, event)
+        for map_ in maps:
+            regions_spaces = db_session.execute(
+                    select(MapRegion, Space)
+                    .where(MapRegion.space_id == Space.id)
+                    .where(MapRegion.map_id == map_.id)
+                    .order_by(MapRegion.id)).all()
+            current_app.logger.info(len(regions_spaces))
+            for region, space in regions_spaces:
+                yaml += self.yaml_map_region(region, space, map_)
+        return yaml

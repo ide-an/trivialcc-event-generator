@@ -1,7 +1,8 @@
 from datetime import datetime
 from dateutil.tz import gettz
+import io
 from flask import (
-    Blueprint, render_template, request, redirect, current_app, url_for, abort, flash
+    Blueprint, render_template, request, redirect, current_app, url_for, abort, flash, send_file
 )
 from flask_wtf import FlaskForm
 from wtforms import (
@@ -15,7 +16,7 @@ from app.models import (
 )
 from app.db import db_session
 from app.services import (
-    CircleImportService
+    CircleImportService, EventExportService
 )
 from app.extract_region_service import ExtractRegionService
 
@@ -67,6 +68,25 @@ def event_detail(event_id):
         abort(404)
     maps = Map.query.where(Map.event_id == event_id).order_by(Map.id).all()
     return render_template('event/detail.html', event=event, maps=maps)
+
+@bp.route('/event/export/<int:event_id>')
+def event_export(event_id):
+    """
+    イベントのエクスポート
+    イベントデータのyamlデータがダウンロードされる
+    """
+    event = Event.query.get(event_id)
+    if event is None:
+        abort(404)
+    maps = Map.query.where(Map.event_id == event_id).order_by(Map.id).all()
+
+    exporter = EventExportService()
+    try:
+        yaml = exporter.do_export(event)
+        return send_file(io.BytesIO(yaml.encode('utf-8')), download_name=f'{event.id}.yaml', as_attachment=True)
+    except Exception as e: # import失敗の旨を通知する
+        flash('インポートが失敗しました:{}'.format(e), FLASH_NG)
+        return redirect(url_for('controllers.event_detail', event_id=event.id))
 
 @bp.route('/event/<int:event_id>/circle/import', methods=('GET', 'POST'))
 def circle_import(event_id):
