@@ -27,9 +27,48 @@ div.region {
 </section>
 
 <section>
-  <script>
-//var csrf_token = "{{ csrf_token() }}";
-  </script>
+  <section>
+    <h3>矩形データの分割</h3>
+    <form id="form_split_region">
+      <p>
+        <label>id: <span id="split_region_id">-</span></label>
+        <input type="button" id="button_split_region_vertical" value="縦に分割">
+        <input type="button" id="button_split_region_horizontal" value="横に分割">
+      </p>
+    </form>
+    <script>
+// 縦に分割
+document.querySelector('#button_split_region_vertical').addEventListener('click', function(){
+  let x = document.querySelector('#form_edit_region input[name=x]').value - 0;
+  let y = document.querySelector('#form_edit_region input[name=y]').value - 0;
+  let w = document.querySelector('#form_edit_region input[name=w]').value - 0;
+  let h = document.querySelector('#form_edit_region input[name=h]').value - 0;
+  console.log(x,y,w,h);
+  document.querySelector('#form_edit_region input[name=w]').value = w / 2;
+  document.querySelector('#button_edit_region').click();
+  document.querySelector('#form_add_region input[name=x]').value = x + w / 2;
+  document.querySelector('#form_add_region input[name=y]').value = y;
+  document.querySelector('#form_add_region input[name=w]').value = w / 2;
+  document.querySelector('#form_add_region input[name=h]').value = h;
+  document.querySelector('#button_add_region').click();
+});
+// 横に分割
+document.querySelector('#button_split_region_horizontal').addEventListener('click', function(){
+  let x = document.querySelector('#form_edit_region input[name=x]').value - 0;
+  let y = document.querySelector('#form_edit_region input[name=y]').value - 0;
+  let w = document.querySelector('#form_edit_region input[name=w]').value - 0;
+  let h = document.querySelector('#form_edit_region input[name=h]').value - 0;
+  console.log(x,y,w,h);
+  document.querySelector('#form_edit_region input[name=h]').value = h / 2;
+  document.querySelector('#button_edit_region').click();
+  document.querySelector('#form_add_region input[name=x]').value = x;
+  document.querySelector('#form_add_region input[name=y]').value = y + h / 2;
+  document.querySelector('#form_add_region input[name=w]').value = w;
+  document.querySelector('#form_add_region input[name=h]').value = h / 2;
+  document.querySelector('#button_add_region').click();
+});
+    </script>
+  </section>
   <section>
     <h3>矩形データの追加</h3>
     <form id="form_add_region">
@@ -85,6 +124,7 @@ document.querySelector('#button_copy_selected').addEventListener('click',functio
 });
     </script>
   </section>
+
   <section>
     <h3>矩形データの編集</h3>
     <form id="form_edit_region">
@@ -132,11 +172,13 @@ onMapLoad = function(map) {
     if (e.selected.length === 0) {
       updateForm('','','','','');
       document.querySelector('#edit_region_id').innerHTML = '-';
+      document.querySelector('#split_region_id').innerHTML = '-';
       return;
     }
     var feature = e.selected[0];
     var model = feature.get('model');
     document.querySelector('#edit_region_id').innerHTML = model.id;
+    document.querySelector('#split_region_id').innerHTML = model.id;
     // form更新
     updateForm(model.id, model.x, model.y, model.w, model.h);
     selectedFeature = feature;
