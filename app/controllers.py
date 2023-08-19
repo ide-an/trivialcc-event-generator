@@ -1,3 +1,4 @@
+from urllib.request import urlopen
 from datetime import datetime
 from dateutil.tz import gettz
 import io
@@ -270,6 +271,14 @@ def region_to_space_reset(map_id):
         db_session.rollback()
         current_app.logger.error('update map_region failed:{}'.format(e))
         return { 'error': 'update map_region failed:{}'.format(e) }, 500
+
+@bp.route('/map/<int:map_id>/image')
+def map_image(map_id):
+    map_ = Map.query.get(map_id)
+    if map_ is None:
+        abort(404)
+    with urlopen(map_.image_url) as response:
+        return send_file(io.BytesIO(response.read()), download_name=f'{map_.id}.png', as_attachment=False)
 
 class EventForm(FlaskForm):
     name = StringField('イベント名', validators=[DataRequired()])

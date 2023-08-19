@@ -1,10 +1,10 @@
-{% macro map_with_region(map_regions, map_image_url, map_dom_id='map') %}
+{% macro map_with_region(map_regions, map_id, map_dom_id='map') %}
 <div id="{{ map_dom_id }}"></div>
 <script type="text/javascript">
 // 外に出す関数
 var addFeature, regionToPolygon, getFeaturesAtCoordinate, onMapLoad = (x) => x;
 (function(){ 
-  var imgUrl = "{{ map_image_url }}";
+  var imgUrl = "/map/{{ map_id }}/image";
   var img = new Image();
   var map, source;
   // 外に出す関数の定義
