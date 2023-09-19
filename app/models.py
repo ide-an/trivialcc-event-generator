@@ -1,5 +1,5 @@
 from sqlalchemy import (
-        Column, Integer, String, DateTime, ForeignKey, Float, select
+        Column, Integer, String, DateTime, ForeignKey, Float, select, delete
         )
 from app.db import Base, db_session
 import json
@@ -105,4 +105,9 @@ class MapRegion(Base):
             "w": self.w,
             "h": self.h,
             })
+    @classmethod
+    def delete_all_by_map_id(cls, map_id):
+        return db_session.execute(
+                delete(MapRegion)
+                .where(MapRegion.map_id == map_id))
 

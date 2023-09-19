@@ -228,4 +228,61 @@ document.querySelector('#button_edit_region').addEventListener('click',function(
 });
     </script>
   </section>
+  
+  <section>
+    <h3>スクリプトで矩形データ作成</h3>
+    <textarea id="textarea_script" rows="50" cols="80">
+var addRegion = function(x, y, w, h) {
+  document.querySelector('#form_add_region input[name=x]').value = "" + x;
+  document.querySelector('#form_add_region input[name=y]').value = "" + y;
+  document.querySelector('#form_add_region input[name=w]').value = "" + w;
+  document.querySelector('#form_add_region input[name=h]').value = "" + h;
+  document.querySelector('#button_add_region').click();
+};
+// addRegion(123, 45, 67, 89);
+    </textarea>
+    <p>
+        <input type="button" id="button_execute_script" value="実行">
+    </p>
+    <script>
+document.querySelector('#button_execute_script').addEventListener('click',function(){
+  var code = document.querySelector('#textarea_script').value;
+  eval(code);
+  return false;
+});
+    </script>
+  </section>
+
+  <section>
+    <h3>矩形データの全削除</h3>
+    <form id="form_delete_all_regions">
+      {{ form_new.hidden_tag() }}
+      <p>
+          <input type="button" id="button_delete_all_regions" value="全削除">
+      </p>
+    </form>
+    <script>
+document.querySelector('#button_delete_all_regions').addEventListener('click',function(){ 
+  var data = new FormData(document.forms.form_delete_all_regions);
+  var map_id = data.get('map_id');
+  fetch('http://127.0.0.1:5000/map/'+map_id+'/region/delete_all', {
+    method: 'POST',
+    body: data
+  }).then(response => {
+    if (!response.ok) {
+      // 失敗したときもとりあえず中身見る
+      response.json().then(data => console.log(data));
+      throw new Error("矩形の全削除に失敗しました");
+    }
+    return response.json();
+  }).then(ok => {
+    console.log(ok);
+    alert("矩形データを削除しました。リロードしてください。");
+  }).catch(error => {
+    console.log('error!!!', error);
+  });
+  return false;
+});
+    </script>
+  </section>
   {% endblock %}
