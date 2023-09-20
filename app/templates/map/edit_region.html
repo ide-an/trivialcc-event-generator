@@ -32,8 +32,8 @@ div.region {
     <form id="form_split_region">
       <p>
         <label>id: <span id="split_region_id">-</span></label>
-        <input type="button" id="button_split_region_vertical" value="縦に分割(ショートカット v)">
-        <input type="button" id="button_split_region_horizontal" value="横に分割(ショートカット s)">
+        <input type="button" id="button_split_region_vertical" value="縦に分割">
+        <input type="button" id="button_split_region_horizontal" value="横に分割">
       </p>
     </form>
     <script>
@@ -72,14 +72,6 @@ document.querySelector('#button_split_region_vertical').addEventListener('click'
 // 横に分割
 document.querySelector('#button_split_region_horizontal').addEventListener('click', function(){
   splitHorizontal();
-});
-document.addEventListener('keydown', function(e) {
-  //console.log(e.code, e.key)
-  if (e.key === 's') {
-    splitHorizontal();
-  } else if (e.key === 'v') {
-    splitVertical();
-  }
 });
     </script>
   </section>
