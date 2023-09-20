@@ -230,27 +230,27 @@ document.querySelector('#button_edit_region').addEventListener('click',function(
   </section>
   
   <section>
-    <h3>スクリプトで矩形データ作成</h3>
-    <textarea id="textarea_script" rows="50" cols="80">
-var addRegion = function(x, y, w, h) {
-  document.querySelector('#form_add_region input[name=x]').value = "" + x;
-  document.querySelector('#form_add_region input[name=y]').value = "" + y;
-  document.querySelector('#form_add_region input[name=w]').value = "" + w;
-  document.querySelector('#form_add_region input[name=h]').value = "" + h;
-  document.querySelector('#button_add_region').click();
-};
-// addRegion(123, 45, 67, 89);
-    </textarea>
-    <p>
-        <input type="button" id="button_execute_script" value="実行">
-    </p>
-    <script>
-document.querySelector('#button_execute_script').addEventListener('click',function(){
-  var code = document.querySelector('#textarea_script').value;
-  eval(code);
-  return false;
-});
-    </script>
+    <h3>CSVフォーマットで矩形データを取り込む</h3>
+    <p>CSVのフォーマットは下記の通り</p>
+    <ul>
+      <li>1行につき1スペース</li>
+      <li>「x座標」「y座標」「幅」「高さ」の順にカラムが並ぶ。</li>
+      <li>単位はすべてピクセル。<li>
+    </ul>
+    <p>例：</p>
+    <pre>
+123,456,24,12
+    </pre>
+    <form method="POST" action="{{ url_for('controllers.map_import_region', event_id=event.id, map_id=map.id) }}">
+      {{ form_import.csrf_token }}
+      <p>
+        {{ form_import.import_data.label }}
+      </p>
+      <p>
+        {{ form_import.import_data(cols='100', rows='20') }}
+      </p>
+      <p><input type="submit" value="インポート"></p>
+    </form>
   </section>
 
   <section>

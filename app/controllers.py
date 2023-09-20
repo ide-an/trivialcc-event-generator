@@ -17,7 +17,7 @@ from app.models import (
 )
 from app.db import db_session
 from app.services import (
-    CircleImportService, EventExportService
+    CircleImportService, EventExportService, MapRegionImportService
 )
 from app.extract_region_service import ExtractRegionService
 
@@ -189,7 +189,28 @@ def map_edit_region(event_id, map_id):
     form_new = RegionNewForm(map_id=map_.id)
     form_edit = RegionEditForm(map_id=map_.id)
     form_delete_all = RegionDeleteAllForm(map_id=map_.id)
-    return render_template('map/edit_region.html', map=map_, map_regions=map_regions, event=event, form_new=form_new, form_edit=form_edit, form_delete_all=form_delete_all)
+    form_import = RegionImportForm()
+    return render_template('map/edit_region.html', map=map_, map_regions=map_regions, event=event, form_new=form_new, form_edit=form_edit, form_delete_all=form_delete_all, form_import=form_import)
+
+@bp.route('/event/<int:event_id>/map/<int:map_id>/import', methods=['POST'])
+def map_import_region(event_id, map_id):
+    event = Event.query.get(event_id)
+    if event is None:
+        abort(404)
+    map_ = Map.query.get(map_id)
+    if map_ is None:
+        abort(404)
+    form = RegionImportForm()
+    if form.validate_on_submit():
+        importer = MapRegionImportService()
+        try:
+            importer.do_import(form.import_data.data, event, map_)
+            flash('インポートに成功しました', FLASH_OK)
+            return redirect(url_for('controllers.map_edit_region', event_id=event.id, map_id=map_.id))
+        except Exception as e: # import失敗の旨を通知する
+            flash('インポートが失敗しました:{}'.format(e), FLASH_NG)
+            pass
+    return redirect(url_for('controllers.map_edit_region', event_id=event.id, map_id=map_.id))
 
 # ajax
 @bp.route('/map/<int:map_id>/region/new', methods=['POST'])
@@ -323,6 +344,9 @@ class RegionEditForm(FlaskForm):
     y = FloatField('y', validators=[DataRequired()])
     w = FloatField('w', validators=[DataRequired()])
     h = FloatField('h', validators=[DataRequired()])
+
+class RegionImportForm(FlaskForm):
+    import_data = TextAreaField('インポートデータ', validators=[DataRequired()])
 
 class RegionDeleteAllForm(FlaskForm):
     map_id = HiddenField(validators=[DataRequired()])

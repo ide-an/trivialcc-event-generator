@@ -63,6 +63,49 @@ class CircleImportService:
             db_session.rollback()
             raise Exception('DBへの保存に失敗しました:{}'.format(e))
 
+# 矩形データインポートのフォーマットは下記の通り
+#「x座標」「y座標」「幅」「高さ」の順にカラムが並ぶ。</li>
+MapRegionImportRow = namedtuple('MapRegionImportRow', ['x','y','width','height'])
+class MapRegionImportService:
+    def parse_csv(self, import_data):
+        return list(map(MapRegionImportRow._make, csv.reader(io.StringIO(import_data))))
+
+    def validate_row(self, row):
+        def is_float(v):
+            try:
+                x = float(v)
+                return True
+            except:
+                return False
+        return is_float(row.x) and is_float(row.y) and is_float(row.width) and is_float(row.height)
+
+    def do_import(self, import_data, event, map_):
+        try:
+            csv = self.parse_csv(import_data)
+        except Exception as e:
+            current_app.logger.warning('do_import parse_csv failed:{}'.format(e))
+            raise Exception('CSVのパースに失敗しました')
+        # spaceとcircleを作ってsaveする
+        current_app.logger.info('csv:{}'.format(csv))
+        try:
+            for row in csv:
+                try:
+                    self.validate_row(row)
+                except Exception as e:
+                    raise Exception('{}; 不正な行:{}'.format(e, row)) from e
+                map_region = MapRegion(
+                        x = row.x,
+                        y = row.y,
+                        w = row.width,
+                        h = row.height,
+                        map_id = map_.id,
+                        )
+                db_session.add(map_region)
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            raise Exception('DBへの保存に失敗しました:{}'.format(e))
+
 class EventExportService:
     def yaml_event(self, event):
         # タイムゾーンは+09決め打ち
