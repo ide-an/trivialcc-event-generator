@@ -6,6 +6,7 @@ trivialcc-event-generator はtrivial-circlecheckに登録するイベントデ�
 
 ## How to Run?
 
+
 ```bash
 # venv
 python -m venv env
@@ -13,6 +14,9 @@ python -m venv env
 
 # install packages
 pip install < requirements.txt
+
+# 初回起動時のみDB初期化がある
+flask init-db
 
 # run flask
 flask run
